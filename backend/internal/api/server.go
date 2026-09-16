@@ -88,7 +88,9 @@ func New(d Deps) (*Server, error) {
 	mux.HandleFunc("/api/", s.notFound)
 	mux.Handle("/", web)
 
-	s.handler = securityHeaders(s.requestLog(s.recoverer(mux)))
+	// compress sits inside requestLog so the logged byte count is what went
+	// on the wire, and outside recoverer so a panic reply is encoded too.
+	s.handler = securityHeaders(s.requestLog(compress(s.recoverer(mux))))
 	return s, nil
 }
 

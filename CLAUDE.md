@@ -17,7 +17,9 @@ are fixed; do not re-open them without asking. Code, comments and docs are in En
     `<DATA_DIR>/incoming` and are renamed into place. Paths only from UUIDs + variant whitelist.
   - `internal/image` — libvips via `github.com/cshum/vipsgen/vips816` (Debian 13 libvips 8.16).
   - `internal/auth` — API keys (sha256), album passwords (bcrypt), session cookie (HMAC).
-  - `internal/web` — serves the frontend build from `FRONTEND_DIR` with SPA fallback.
+  - `internal/web` — serves the frontend build from `FRONTEND_DIR` with SPA fallback,
+    preferring the `.br`/`.zst`/`.gz` siblings written by the frontend build.
+  - `internal/httpx` — Accept-Encoding parsing shared by `internal/api` and `internal/web`.
 - `frontend/` — Vite + React + TypeScript (Tailwind v4, shadcn/ui, react-photo-album,
   yet-another-react-lightbox, TanStack Query, Vitest + MSW).
 - `lightroom-plugin/smugbox.lrplugin/` — Lightroom Classic publish service (Lua).
@@ -41,4 +43,8 @@ storage per test; clock and randomness are injected through `api.Deps`.
 - Errors to clients: JSON `{"error": "<snake_case_code>", "message"?: "..."}`.
 - Timestamps in the DB are RFC 3339 UTC text; `taken_at` is stored as Lightroom sends it.
 - Never build filesystem paths from user input; go through `storage.Store`.
+- Text responses are compressed: static assets from the precompressed siblings
+  `frontend/scripts/precompress.mjs` writes during `npm run build`, everything
+  else by the `compress` middleware in `internal/api`. Image and zip responses
+  are left alone.
 - Write tests in the same change as the code. Keep `go vet` clean.
