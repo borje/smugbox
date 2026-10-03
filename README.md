@@ -140,3 +140,7 @@ and throw it away, so an unreadable JPEG is rejected before it is accepted.
 A photo is hidden from visitors until its variants exist. The pending state
 lives in the database (`photos.variants_ready`), so variants left unfinished
 by a crash or restart are rendered when the server next starts.
+
+## License
+
+[AGPL-3.0-only](LICENSE)
