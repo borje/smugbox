@@ -204,3 +204,37 @@ func TestDeleteFolderCascades(t *testing.T) {
 		t.Fatalf("photo should cascade delete: %v", err)
 	}
 }
+
+// Root folders come newest content first, counting albums at any depth.
+func TestListChildFoldersNewestFirst(t *testing.T) {
+	d := openTest(t)
+	ctx := context.Background()
+	alpha := newFolder("f1", "", "alpha")
+	zulu := newFolder("f2", "", "zulu")
+	deep := newFolder("f3", "f2", "deep") // zulu's only content is nested
+	for _, f := range []*Folder{alpha, zulu, deep} {
+		if err := d.CreateFolder(ctx, f); err != nil {
+			t.Fatal(err)
+		}
+	}
+	old := newAlbum("a1", "old")
+	old.FolderID = alpha.ID
+	recent := newAlbum("a2", "recent")
+	recent.FolderID = deep.ID
+	for i, a := range []*Album{old, recent} {
+		if err := d.CreateAlbum(ctx, a); err != nil {
+			t.Fatal(err)
+		}
+		taken := []string{"2020-01-01T10:00:00", "2025-06-01T10:00:00"}[i]
+		if err := d.InsertPhoto(ctx, newPhoto("p"+a.ID, a.ID, "lr-"+a.ID, "x.jpg", taken)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	children, err := d.ListChildFolders(ctx, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(children) != 2 || children[0].Slug != "zulu" || children[1].Slug != "alpha" {
+		t.Fatalf("want zulu (newest, nested) before alpha: %+v", children)
+	}
+}
