@@ -15,6 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     # vipsgen/vips816 needs libvips 8.16 (Debian 13); same base as deploy/Dockerfile.
     container: golang:1.26-trixie
+    env:
+      # Checkout is owned by another uid than the container's root; git refuses it.
+      GOFLAGS: -buildvcs=false
     defaults:
       run:
         working-directory: backend
