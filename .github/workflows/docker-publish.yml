@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -88,11 +89,14 @@ jobs:
         id: meta
         with:
           images: ${{ env.IMAGE }}
+          # latest follows main only; v* tags must not move it.
+          flavor: latest=false
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
-            type=sha
-            type=raw,value=${{ github.run_number }}
+            type=sha,enable=${{ github.event_name != 'pull_request' }}
+            type=raw,value=${{ github.run_number }},enable=${{ github.event_name != 'pull_request' }}
+            type=ref,event=pr
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
