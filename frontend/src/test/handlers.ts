@@ -14,8 +14,6 @@ import {
 export const unlocked = new Set<string>()
 
 export const handlers = [
-  http.get('/api/site', () => HttpResponse.json({ title: 'Smugbox' })),
-
   http.get('/api/albums', () =>
     HttpResponse.json({ folders: [travelFolder], albums: [secretAlbum, summerAlbum, emptyAlbum] }),
   ),
