@@ -111,7 +111,9 @@ cd tools/loadtest
 | Variable | Default | Purpose |
 |---|---|---|
 | `PUBLIC_BASE_URL` | `http://localhost:8080` | Public origin used in links the plugin records. |
-| `SITE_TITLE` | `Smugbox` | Title shown in the browser tab and page header. |
+| `SITE_TITLE` | `Smugbox` | Title shown in the browser tab and as the first item of the top bar. |
+| `SITE_THEME` | `noir` | Theme to use: a zip or folder name in `DATA_DIR/themes` or `BUILTIN_THEMES_DIR` (see [themes/README.md](themes/README.md)). Restart to change. |
+| `BUILTIN_THEMES_DIR` | unset | Themes shipped with the server; the image sets `/srv/themes` (Noir). |
 | `DATA_DIR` | `./data` | SQLite database and photo files. |
 | `FRONTEND_DIR` | unset | Built frontend to serve; unset gives 404 for non-API paths. |
 | `LISTEN_ADDR` | `:8080` | Listen address. |
@@ -126,7 +128,7 @@ cd tools/loadtest
   `PUT .../order`, `GET .../photos`, `GET /api/publish/ping`,
   `POST/PUT/DELETE /api/publish/folders[/{id}]`.
   Bearer API key required. Used by the plugin.
-- `GET /api/site`, `GET /api/albums`, `GET /api/albums/{slug}`, `GET .../cover`,
+- `GET /api/albums`, `GET /api/albums/{slug}`, `GET .../cover`,
   `GET .../photos/{id}/{variant}[?download=1]`, `GET .../download`,
   `POST .../unlock`, `GET /api/folders/{slug}`. Used by the frontend.
 - `GET /api/healthz`.
