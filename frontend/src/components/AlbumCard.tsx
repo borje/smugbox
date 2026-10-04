@@ -5,12 +5,13 @@ import type { AlbumSummary } from '@/api/types'
 import { formatDateRange, photoCount } from '@/lib/format'
 
 // Editorial card: the cover is the card, the text sits below it on the page
-// background. Hover lifts the image slightly; focus draws the ring on the cover.
+// background. Hover zooms the image slightly; focus outlines the cover.
+// box-shadow on the cover is left to the theme.
 export default function AlbumCard({ album }: { album: AlbumSummary }) {
   const dates = formatDateRange(album.taken_from, album.taken_to)
   return (
     <Link data-slot="album-card" to={`/a/${album.slug}`} className="group block rounded-panel focus:outline-none" aria-label={album.name}>
-      <div data-slot="album-card-media" className="relative aspect-[var(--cover-aspect)] w-full overflow-hidden rounded-media bg-muted ring-1 ring-foreground/10 transition-shadow group-hover:shadow-lg group-focus-visible:ring-2 group-focus-visible:ring-ring">
+      <div data-slot="album-card-media" className="relative aspect-[var(--cover-aspect)] w-full overflow-hidden rounded-media bg-muted transition-shadow group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-ring">
         {album.cover_url ? (
           <FadeImage
             src={album.cover_url}

@@ -8,7 +8,7 @@ import type { FolderSummary } from '@/api/types'
 export default function FolderCard({ folder }: { folder: FolderSummary }) {
   return (
     <Link data-slot="folder-card" to={`/f/${folder.slug}`} className="group block rounded-panel focus:outline-none" aria-label={folder.name}>
-      <div data-slot="folder-card-media" className="relative aspect-[var(--cover-aspect)] w-full overflow-hidden rounded-media bg-muted ring-1 ring-foreground/10 transition-shadow group-hover:shadow-lg group-focus-visible:ring-2 group-focus-visible:ring-ring">
+      <div data-slot="folder-card-media" className="relative aspect-[var(--cover-aspect)] w-full overflow-hidden rounded-media bg-muted transition-shadow group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-ring">
         {folder.cover_url ? (
           <FadeImage
             src={folder.cover_url}
