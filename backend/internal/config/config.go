@@ -12,15 +12,17 @@ import (
 // Config holds all runtime settings. See deploy/.env.example for the
 // environment variables that populate it.
 type Config struct {
-	ListenAddr     string
-	DataDir        string
-	FrontendDir    string
-	PublicBaseURL  string
-	SiteTitle      string
-	TrustedProxies []netip.Prefix
-	MaxUploadBytes int64
-	LogLevel       string
-	LogFormat      string // "text" or "json"
+	ListenAddr       string
+	DataDir          string
+	FrontendDir      string
+	PublicBaseURL    string
+	SiteTitle        string
+	SiteTheme        string // theme id; internal/theme validates it
+	BuiltinThemesDir string // themes shipped with the image; user themes are in <DataDir>/themes
+	TrustedProxies   []netip.Prefix
+	MaxUploadBytes   int64
+	LogLevel         string
+	LogFormat        string // "text" or "json"
 }
 
 // FromEnv builds a Config from the given environment lookup (normally os.Getenv).
@@ -32,13 +34,15 @@ func FromEnv(getenv func(string) string) (Config, error) {
 		return def
 	}
 	c := Config{
-		ListenAddr:    get("LISTEN_ADDR", ":8080"),
-		DataDir:       get("DATA_DIR", "./data"),
-		FrontendDir:   get("FRONTEND_DIR", ""),
-		PublicBaseURL: strings.TrimRight(get("PUBLIC_BASE_URL", "http://localhost:8080"), "/"),
-		SiteTitle:     get("SITE_TITLE", "Smugbox"),
-		LogLevel:      strings.ToLower(get("LOG_LEVEL", "info")),
-		LogFormat:     strings.ToLower(get("LOG_FORMAT", "text")),
+		ListenAddr:       get("LISTEN_ADDR", ":8080"),
+		DataDir:          get("DATA_DIR", "./data"),
+		FrontendDir:      get("FRONTEND_DIR", ""),
+		PublicBaseURL:    strings.TrimRight(get("PUBLIC_BASE_URL", "http://localhost:8080"), "/"),
+		SiteTitle:        get("SITE_TITLE", "Smugbox"),
+		SiteTheme:        get("SITE_THEME", "noir"),
+		BuiltinThemesDir: get("BUILTIN_THEMES_DIR", ""),
+		LogLevel:         strings.ToLower(get("LOG_LEVEL", "info")),
+		LogFormat:        strings.ToLower(get("LOG_FORMAT", "text")),
 	}
 
 	mb, err := strconv.ParseInt(get("MAX_UPLOAD_MB", "100"), 10, 64)
