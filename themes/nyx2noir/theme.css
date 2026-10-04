@@ -88,8 +88,6 @@
   --lightbox-bg: oklch(0.24 0.004 286 / 0.97);
 
   --cover-aspect: 1 / 1;
-  /* Photos grow from smaller while fading in; covers just appear (below). */
-  --reveal-animation: zoom-fade-in 1s ease backwards;
 
   --yarl__slide_captions_container_background: linear-gradient(to top, oklch(0 0 0 / 0.7), transparent);
 }
@@ -134,7 +132,6 @@
 }
 [data-slot="album-card-media"],
 [data-slot="folder-card-media"] {
-  --reveal-animation: none;
   background: transparent;
 }
 [data-slot="album-card"]:hover [data-slot="album-card-media"],
@@ -163,4 +160,9 @@
 }
 [data-slot="album-hero"]:not(:has([data-slot="album-hero-media"])) [data-slot="album-hero-title"] {
   justify-content: center;
+}
+
+/* Album photos grow from smaller while fading in; covers fade in like Noir's. */
+[data-slot="gallery"] {
+  --reveal-animation: zoom-fade-in 1s ease backwards;
 }
