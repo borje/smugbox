@@ -25,8 +25,7 @@ const COMPRESSIBLE = new Set([
   '.xml',
 ])
 
-// Below this the encoding overhead outweighs the saving, and the server's
-// own threshold (minCompressSize in internal/api) matches.
+// Below this the encoding overhead outweighs the saving.
 const MIN_BYTES = 1024
 
 const codecs = [
