@@ -90,7 +90,3 @@ export interface FolderDetail {
   folders: FolderSummary[]
   albums: AlbumSummary[]
 }
-
-export interface SiteConfig {
-  title: string
-}

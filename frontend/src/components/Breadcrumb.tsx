@@ -1,33 +1,45 @@
+import { Fragment } from 'react'
 import { Link } from 'react-router'
-import { ChevronRight } from 'lucide-react'
 import type { Crumb } from '@/api/types'
+import {
+  Breadcrumb as Root,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
+import { getSite } from '@/lib/site'
 
 /**
- * Full path, root first, ending at the current page. Ancestors (`crumbs`)
- * are links; `current` — the page you're already on — is plain text.
+ * The top bar on every page: site name, then the folders above the current
+ * page (`crumbs`, links), then the page itself (`current`, plain text).
+ * With neither, the site name is the current page (root, loading, errors).
  */
-export default function Breadcrumb({ crumbs, current }: { crumbs?: Crumb[]; current?: string }) {
+export default function Breadcrumb({ crumbs = [], current }: { crumbs?: Crumb[]; current?: string }) {
+  const title = getSite().title
+  const links =
+    current === undefined ? [] : [{ name: title, to: '/' }, ...crumbs.map((c) => ({ name: c.name, to: `/f/${c.slug}` }))]
   return (
-    <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-      <Link to="/" aria-label="Smugbox" className="hover:text-foreground hover:underline">
-        🏠
-      </Link>
-      {crumbs?.map((c) => (
-        <span key={c.slug} className="flex items-center gap-1">
-          <ChevronRight className="size-3.5" aria-hidden="true" />
-          <Link to={`/f/${c.slug}`} className="hover:text-foreground hover:underline">
-            {c.name}
-          </Link>
-        </span>
-      ))}
-      {current && (
-        <span className="flex items-center gap-1">
-          <ChevronRight className="size-3.5" aria-hidden="true" />
-          <span aria-current="page" className="text-foreground">
-            {current}
-          </span>
-        </span>
-      )}
-    </nav>
+    <Root aria-label="Breadcrumb" className="rounded-pill">
+      <BreadcrumbList>
+        {links.map((item) => (
+          <Fragment key={item.to}>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to={item.to}>{item.name}</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+          </Fragment>
+        ))}
+        <BreadcrumbItem>
+          {/* shadcn marks the page role="link"; the current page is plain text. */}
+          <BreadcrumbPage role={undefined} aria-disabled={undefined}>
+            {current ?? title}
+          </BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Root>
   )
 }

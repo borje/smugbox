@@ -1,86 +1,165 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+/* Library styles join the components layer: below core's utilities, and,
+   like all core CSS, below an unlayered theme.css whatever the load order. */
+@import "react-photo-album/styles.css" layer(components);
+@import "yet-another-react-lightbox/styles.css" layer(components);
+@import "yet-another-react-lightbox/plugins/captions.css" layer(components);
+@import "yet-another-react-lightbox/plugins/counter.css" layer(components);
+@import "yet-another-react-lightbox/plugins/thumbnails.css" layer(components);
+@import "./components/Gallery.css" layer(components);
 
-/* The app is dark-only. <html class="dark"> is set in index.html so shadcn's
-   `dark:` variants (button, badge, input) apply; the tokens themselves live on :root. */
+/* <html class="dark"> comes from the theme manifest ("dark": true). */
 @custom-variant dark (&:is(.dark *));
 
+/* Plain @theme, not inline: the font-* utilities read the variable, so a
+   theme's :root { --font-* } takes effect. --font-sans is Tailwind's
+   system-ui stack. */
+@theme static {
+  --font-display: var(--font-sans);
+}
+
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+  --font-heading: var(--font-sans);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  /* Semantic shapes: rounded-panel, rounded-media, rounded-pill. */
+  --radius-panel: var(--r-panel);
+  --radius-media: var(--r-media);
+  --radius-pill: var(--r-pill);
 }
 
-:root {
-    /* "Noir": surface ladder taken from album.granberg.in (SmugMug theme):
-       page #1f1f21 -> card #242629 -> popover/muted #2b2e30 -> accent #36363b,
-       hairlines #3b3d42, muted text #8f919c. Chroma stays near zero so the
-       photos carry the colour; the only chromatic token is the ring, a muted
-       brass used for focus and selection. */
-    color-scheme: dark;
-    --background: oklch(0.24 0.004 286);
-    --foreground: oklch(0.94 0.004 265);
-    --card: oklch(0.268 0.006 258);
-    --card-foreground: oklch(0.94 0.004 265);
-    --popover: oklch(0.299 0.006 258);
-    --popover-foreground: oklch(0.94 0.004 265);
-    --primary: oklch(0.94 0.004 265);
-    --primary-foreground: oklch(0.24 0.004 286);
-    --secondary: oklch(0.299 0.006 258);
-    --secondary-foreground: oklch(0.90 0.004 265);
-    --muted: oklch(0.299 0.006 258);
-    --muted-foreground: oklch(0.659 0.016 278);
-    --accent: oklch(0.335 0.009 286);
-    --accent-foreground: oklch(0.94 0.004 265);
-    --destructive: oklch(0.70 0.19 22);
-    --border: oklch(0.36 0.009 268);
-    --input: oklch(0.36 0.009 268);
-    --ring: oklch(0.75 0.08 75);
-    --radius: 0.75rem;
-
-    /* yet-another-react-lightbox reads its own variables, not the shadcn tokens. */
-    --yarl__color_backdrop: oklch(0.24 0.004 286 / 0.97);
-    --yarl__slide_captions_container_background: linear-gradient(to top, oklch(0 0 0 / 0.7), transparent);
-}
-
+/* Token defaults: shadcn's neutral palette plus ours, the theme contract
+   (themes/README.md). Everything here stays inside @layer base so a theme's
+   unlayered :root wins; CSS variables added by `npx shadcn add` go in here
+   too (core-css.test.ts fails otherwise). */
 @layer base {
-    * {
-        @apply border-border outline-ring/50;
-    }
-    html {
-        @apply font-sans;
-    }
-    body {
-        @apply bg-background text-foreground;
-        -webkit-font-smoothing: antialiased;
-    }
-    ::selection {
-        background: color-mix(in oklch, var(--ring) 35%, transparent);
-    }
+  :root {
+    color-scheme: light;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --radius: 0.625rem;
+
+    /* Shapes: panel = album/folder cards and the album header, media =
+       covers and the header photo, pill = the breadcrumb bar. */
+    --r-panel: calc(var(--radius) * 1.4);
+    --r-media: calc(var(--radius) * 1.4);
+    --r-pill: 9999px;
+
+    /* Surfaces. --page-glow is a background-image behind the whole page;
+       the others are read by the lightbox (Gallery.css) and theme CSS. */
+    --page-glow: none;
+    --surface-bg: var(--card);
+    --surface-border: var(--border);
+    --surface-blur: 0px;
+    --panel-bg: var(--card);
+    --control-bg: transparent;
+    --control-hover-bg: var(--accent);
+    --lightbox-bg: var(--background);
+
+    /* Album/folder grid and covers. --card-gap takes one or two lengths
+       (row, column). */
+    --cover-aspect: 4 / 3;
+    --card-grid-min: 18rem;
+    --card-gap: 2rem 1.5rem;
+
+    /* How images appear once loaded and scrolled into view (FadeImage):
+       fade-in, zoom-fade-in or none. */
+    --reveal-animation: fade-in 1s ease-out backwards;
+
+    /* yet-another-react-lightbox reads its own variables. */
+    --yarl__color_backdrop: var(--lightbox-bg);
+  }
+  .dark {
+    color-scheme: dark;
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    background-image: var(--page-glow);
+    background-attachment: fixed;
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--ring) 35%, transparent);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes zoom-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+@utility animate-reveal {
+  animation: var(--reveal-animation);
 }
