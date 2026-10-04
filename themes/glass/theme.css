@@ -1,0 +1,184 @@
+/* Glass: a near-black indigo page with two soft glows behind frosted
+   surfaces. Chroma stays low so the photos carry the colour; the only
+   chromatic token is the ring, a periwinkle used for focus and selection. */
+
+/* Geist (SIL OFL 1.1, fonts/OFL.txt), from @fontsource-variable/geist. */
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(fonts/geist-latin-ext-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(fonts/geist-latin-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --font-sans: "Geist Variable", sans-serif;
+
+  --background: oklch(0.145 0.012 275);
+  --foreground: oklch(0.94 0.004 265);
+  --card: oklch(0.22 0.012 275);
+  --card-foreground: oklch(0.94 0.004 265);
+  --popover: oklch(0.299 0.006 258);
+  --popover-foreground: oklch(0.94 0.004 265);
+  --primary: oklch(0.94 0.004 265);
+  --primary-foreground: oklch(0.145 0.012 275);
+  --secondary: oklch(0.299 0.006 258);
+  --secondary-foreground: oklch(0.9 0.004 265);
+  --muted: oklch(0.299 0.006 258);
+  --muted-foreground: oklch(0.659 0.016 278);
+  --accent: oklch(0.335 0.009 286);
+  --accent-foreground: oklch(0.94 0.004 265);
+  --destructive: oklch(0.7 0.19 22);
+  --border: oklch(0.36 0.009 268);
+  --input: oklch(0.36 0.009 268);
+  --ring: oklch(0.78 0.11 275);
+  --radius: 0.75rem;
+  /* panel = the frosted cards, media = covers and banners, pill = the top bar. */
+  --r-panel: calc(var(--radius) * 2.2);
+  --r-media: calc(var(--radius) * 1.8);
+
+  --page-glow:
+    radial-gradient(640px 640px at 0% 0%, oklch(0.55 0.2 275 / 0.35), transparent 70%),
+    radial-gradient(560px 560px at 100% 35%, oklch(0.6 0.17 35 / 0.22), transparent 70%);
+  --surface-bg: oklch(1 0 0 / 0.06);
+  --surface-border: oklch(1 0 0 / 0.12);
+  --surface-blur: 16px;
+  --panel-bg: oklch(0.22 0.012 275 / 0.7);
+  --lightbox-bg: oklch(0.145 0.012 275 / 0.97);
+  --control-bg: oklch(1 0 0 / 0.08);
+  --control-hover-bg: oklch(1 0 0 / 0.18);
+
+  --yarl__slide_captions_container_background: linear-gradient(to top, oklch(0 0 0 / 0.7), transparent);
+}
+
+/* The top bar: a frosted pill that stays at the top, the site name beside a
+   camera badge. */
+[data-slot="page"] {
+  padding-top: 1rem;
+}
+[data-slot="breadcrumb"] {
+  position: sticky;
+  top: 1rem;
+  z-index: 40;
+  margin-bottom: 2rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-border);
+  background: var(--surface-bg);
+  backdrop-filter: blur(var(--surface-blur));
+}
+[data-slot="breadcrumb-item"]:first-child,
+[data-slot="breadcrumb-item"]:first-child > * {
+  gap: 0.625rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+}
+[data-slot="breadcrumb-item"]:first-child::before {
+  content: "";
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: calc(var(--radius) * 0.8);
+  background: url(icons/camera.svg) center / 1rem no-repeat, var(--muted);
+}
+
+/* Album and folder cards: the cover inset in a frosted panel, the name below
+   beside a round arrow. */
+[data-slot="child-grid"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 640px) {
+  [data-slot="child-grid"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  [data-slot="child-grid"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+[data-slot="album-card"],
+[data-slot="folder-card"] {
+  padding: 0.625rem;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-bg);
+  backdrop-filter: blur(var(--surface-blur));
+  transition: background-color 150ms ease;
+}
+[data-slot="album-card"]:hover,
+[data-slot="folder-card"]:hover {
+  background: oklch(1 0 0 / 0.1);
+}
+[data-slot="album-card-body"],
+[data-slot="folder-card-body"] {
+  position: relative;
+  min-height: 3.625rem;
+  padding: 0.875rem 3.625rem 0.5rem 0.625rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+[data-slot="album-card-body"]::after,
+[data-slot="folder-card-body"]::after {
+  content: "";
+  position: absolute;
+  right: 0.625rem;
+  top: calc(50% + 0.1875rem);
+  translate: 0 -50%;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  background: url(icons/arrow-up-right.svg) center / 1rem no-repeat, oklch(1 0 0 / 0.1);
+  transition: background-color 150ms ease;
+}
+[data-slot="album-card"]:hover [data-slot="album-card-body"]::after,
+[data-slot="folder-card"]:hover [data-slot="folder-card-body"]::after {
+  background-color: oklch(1 0 0 / 0.2);
+}
+[data-slot="album-card-title"],
+[data-slot="folder-card-title"] {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+/* Album header: the banner, or the text header of an empty album, inset in
+   a frosted panel. */
+[data-slot="album-hero"] {
+  padding: 0.625rem;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-bg);
+  backdrop-filter: blur(var(--surface-blur));
+}
+[data-slot="album-hero"]:not(:has([data-slot="album-hero-media"])) {
+  padding: 1.5rem;
+}
+@media (min-width: 640px) {
+  [data-slot="album-hero"]:not(:has([data-slot="album-hero-media"])) {
+    padding: 2rem;
+  }
+}
+[data-slot="album-download"] {
+  border-color: oklch(1 0 0 / 0.15);
+  background: oklch(1 0 0 / 0.1);
+  backdrop-filter: blur(12px);
+}
+[data-slot="album-download"]:hover {
+  background: oklch(1 0 0 / 0.2);
+}
+
+/* Album photos appear as they load; only covers fade in. */
+[data-slot="gallery"] {
+  --reveal-animation: none;
+}
