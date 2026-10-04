@@ -27,6 +27,7 @@ import (
 	"github.com/bege/smugbox/backend/internal/db"
 	"github.com/bege/smugbox/backend/internal/image"
 	"github.com/bege/smugbox/backend/internal/storage"
+	"github.com/bege/smugbox/backend/internal/theme"
 	"github.com/bege/smugbox/backend/internal/web"
 )
 
@@ -88,9 +89,31 @@ func openData(ctx context.Context, cfg config.Config) (*db.DB, *storage.Store, e
 	return database, store, nil
 }
 
+// webHandler loads the theme and the frontend. API-only (no FRONTEND_DIR)
+// loads neither.
+func webHandler(cfg config.Config, logger *slog.Logger) (http.Handler, error) {
+	if cfg.FrontendDir == "" {
+		return web.Handler("", "", nil)
+	}
+	th, err := theme.Load(cfg.SiteTheme, cfg.BuiltinThemesDir, filepath.Join(cfg.DataDir, "themes"))
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range th.Skipped {
+		logger.Info("theme file not served", "path", p)
+	}
+	logger.Info("theme loaded", "id", th.ID, "name", th.Manifest.Name, "version", th.Manifest.Version, "source", th.Source)
+	return web.Handler(cfg.FrontendDir, cfg.SiteTitle, th)
+}
+
 func serve(cfg config.Config) error {
 	logger := newLogger(cfg)
 	slog.SetDefault(logger)
+
+	webH, err := webHandler(cfg, logger)
+	if err != nil {
+		return err
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -109,7 +132,7 @@ func serve(cfg config.Config) error {
 		Store: store,
 		Cfg:   cfg,
 		Log:   logger,
-		Web:   web.Handler(cfg.FrontendDir),
+		Web:   webH,
 	})
 	if err != nil {
 		return err
