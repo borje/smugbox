@@ -1,19 +1,30 @@
-import { screen } from '@testing-library/react'
-import { http, HttpResponse } from 'msw'
+import { screen, within } from '@testing-library/react'
+import { delay, http } from 'msw'
 import { server } from '@/test/server'
-import { renderApp } from '@/test/render'
+import { renderApp, setSite } from '@/test/render'
 
 describe('App', () => {
-  it('uses the configured site title in the header and document title', async () => {
-    server.use(http.get('/api/site', () => HttpResponse.json({ title: 'The Granberg Archive' })))
-    renderApp('/')
-    expect(await screen.findByRole('link', { name: /The Granberg Archive/ })).toBeInTheDocument()
-    expect(document.title).toBe('The Granberg Archive')
+  it('shows the injected site title as the first breadcrumb item', async () => {
+    setSite({ title: 'The Granberg Archive', theme: { smugbox: 1, name: 'Noir', dark: true, gallery: 'rows' } })
+    renderApp('/f/travel')
+    expect(await screen.findByRole('link', { name: 'The Granberg Archive' })).toHaveAttribute('href', '/')
   })
 
-  it('falls back to "Smugbox" when the site config request fails', async () => {
-    server.use(http.get('/api/site', () => HttpResponse.json({ error: 'boom' }, { status: 500 })))
+  it('falls back to "Smugbox" without injected site JSON', () => {
     renderApp('/')
-    expect(await screen.findByRole('link', { name: /Smugbox/ })).toBeInTheDocument()
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(within(nav).getByText('Smugbox')).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('renders the top bar while a page is still loading', () => {
+    server.use(
+      http.get('/api/albums/:slug', async () => {
+        await delay('infinite')
+      }),
+    )
+    renderApp('/a/summer-2026')
+    expect(screen.getByLabelText('Loading album')).toBeInTheDocument()
+    const nav = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(within(nav).getByText('Smugbox')).toHaveAttribute('aria-current', 'page')
   })
 })

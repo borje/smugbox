@@ -1,0 +1,94 @@
+/* Noir: the original look. Surface ladder from album.granberg.in (SmugMug
+   theme): page #1f1f21 -> card #242629 -> popover/muted #2b2e30 -> accent
+   #36363b, hairlines #3b3d42, muted text #8f919c. Chroma stays near zero so
+   the photos carry the colour; the only chromatic token is the ring, a muted
+   brass used for focus and selection. Solid surfaces, no glow. */
+
+/* Geist (SIL OFL 1.1, fonts/OFL.txt), from @fontsource-variable/geist. */
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(fonts/geist-latin-ext-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(fonts/geist-latin-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --font-sans: "Geist Variable", sans-serif;
+
+  --background: oklch(0.24 0.004 286);
+  --foreground: oklch(0.94 0.004 265);
+  --card: oklch(0.268 0.006 258);
+  --card-foreground: oklch(0.94 0.004 265);
+  --popover: oklch(0.299 0.006 258);
+  --popover-foreground: oklch(0.94 0.004 265);
+  --primary: oklch(0.94 0.004 265);
+  --primary-foreground: oklch(0.24 0.004 286);
+  --secondary: oklch(0.299 0.006 258);
+  --secondary-foreground: oklch(0.9 0.004 265);
+  --muted: oklch(0.299 0.006 258);
+  --muted-foreground: oklch(0.659 0.016 278);
+  --accent: oklch(0.335 0.009 286);
+  --accent-foreground: oklch(0.94 0.004 265);
+  --destructive: oklch(0.7 0.19 22);
+  --border: oklch(0.36 0.009 268);
+  --input: oklch(0.36 0.009 268);
+  --ring: oklch(0.75 0.08 75);
+  --radius: 0.75rem;
+  --r-pill: 0;
+
+  --surface-border: oklch(1 0 0 / 0.1);
+  --control-hover-bg: oklch(1 0 0 / 0.1);
+  --lightbox-bg: oklch(0.24 0.004 286 / 0.97);
+
+  /* Three columns of covers on a wide screen, two from about 780px. */
+  --card-grid-min: 22.5rem;
+
+  --yarl__slide_captions_container_background: linear-gradient(to top, oklch(0 0 0 / 0.7), transparent);
+}
+
+/* The top bar: sticky across the page, the site name set like a wordmark. */
+[data-slot="page"] {
+  padding-top: 0;
+}
+[data-slot="breadcrumb"] {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  margin: 0 -1rem 2rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+  background: color-mix(in oklab, var(--background) 75%, transparent);
+  backdrop-filter: blur(12px);
+}
+[data-slot="breadcrumb-item"]:first-child {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+}
+
+/* Covers lift into a soft shadow on hover. */
+[data-slot="album-card"]:hover:not(:focus-visible) [data-slot="album-card-media"],
+[data-slot="folder-card"]:hover:not(:focus-visible) [data-slot="folder-card-media"] {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent),
+    0 10px 15px -3px oklch(0 0 0 / 0.4),
+    0 4px 6px -4px oklch(0 0 0 / 0.4);
+}
+
+/* Album photos appear as they load; only covers fade in. */
+[data-slot="gallery"] {
+  --reveal-animation: none;
+}
