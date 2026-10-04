@@ -1,0 +1,37 @@
+name: Clean up images
+
+on:
+  pull_request:
+    types: [closed]
+  schedule:
+    - cron: "0 4 * * 0"
+  workflow_dispatch:
+
+permissions:
+  packages: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ghcr-cleanup
+    steps:
+      # PR images carry only pr-N, so dropping the tag deletes them.
+      - if: github.event_name == 'pull_request'
+        uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          delete-tags: pr-${{ github.event.pull_request.number }}
+
+      # Separate step: combined with delete-tags, keep-n-tagged would only
+      # apply to the deleted tags.
+      # older-than spares platform images a running build has pushed but not
+      # yet tagged through its manifest list.
+      - if: github.event_name != 'pull_request'
+        uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          exclude-tags: latest,*.*,pr-*
+          keep-n-tagged: 10
+          delete-untagged: true
+          older-than: 1 day
+          # Manual runs only preview what the weekly sweep would delete.
+          dry-run: ${{ github.event_name == 'workflow_dispatch' }}
