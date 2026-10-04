@@ -69,7 +69,8 @@
   background: color-mix(in oklab, var(--background) 75%, transparent);
   backdrop-filter: blur(12px);
 }
-[data-slot="breadcrumb-item"]:first-child {
+[data-slot="breadcrumb-item"]:first-child,
+[data-slot="breadcrumb-item"]:first-child > * {
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.025em;
