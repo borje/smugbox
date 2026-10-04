@@ -31,7 +31,7 @@ are fixed; do not re-open them without asking. Code, comments and docs are in En
 cd backend
 go build -p 1 ./...      # -p 1: this dev machine has 2 GB RAM; modernc.org/libc is heavy
 go test -p 1 ./...
-DATA_DIR=/tmp/smugbox go run ./cmd/smugbox serve
+DATA_DIR=/tmp/smugbox BUILTIN_THEMES_DIR=../themes go run ./cmd/smugbox serve
 go run ./cmd/smugbox admin create-api-key --label "Lightroom laptop"
 ```
 
