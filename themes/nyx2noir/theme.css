@@ -143,7 +143,6 @@
 [data-slot="album-card-body"],
 [data-slot="folder-card-body"] {
   padding: 1rem 0 0;
-  text-align: center;
 }
 [data-slot="album-card-title"],
 [data-slot="folder-card-title"] {
