@@ -52,9 +52,6 @@
   --control-hover-bg: oklch(1 0 0 / 0.1);
   --lightbox-bg: oklch(0.24 0.004 286 / 0.97);
 
-  /* Three columns of covers on a wide screen, two from about 780px. */
-  --card-grid-min: 22.5rem;
-
   --yarl__slide_captions_container_background: linear-gradient(to top, oklch(0 0 0 / 0.7), transparent);
 }
 
@@ -79,9 +76,28 @@
   color: var(--foreground);
 }
 
-/* Covers lift into a soft shadow on hover. */
-[data-slot="album-card"]:hover:not(:focus-visible) [data-slot="album-card-media"],
-[data-slot="folder-card"]:hover:not(:focus-visible) [data-slot="folder-card-media"] {
+/* Covers: one column on phones, two from tablet width, three on desktop. */
+[data-slot="child-grid"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 640px) {
+  [data-slot="child-grid"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  [data-slot="child-grid"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Covers: a hairline ring, lifting into a soft shadow on hover. */
+[data-slot="album-card-media"],
+[data-slot="folder-card-media"] {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent);
+}
+[data-slot="album-card"]:hover [data-slot="album-card-media"],
+[data-slot="folder-card"]:hover [data-slot="folder-card-media"] {
   box-shadow:
     0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent),
     0 10px 15px -3px oklch(0 0 0 / 0.4),

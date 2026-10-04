@@ -1,0 +1,180 @@
+/* Nyx2: after the Sophie Squarespace template. White page, the site name as
+   an italic serif wordmark, spaced capitals under square covers, and an
+   edge-to-edge photo mosaic that grows into place. */
+
+/* Geist and Instrument Serif (SIL OFL 1.1, fonts/OFL-*.txt), from Fontsource. */
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(fonts/geist-latin-ext-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(fonts/geist-latin-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(fonts/instrument-serif-latin-ext-400-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(fonts/instrument-serif-latin-400-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 400;
+  src: url(fonts/instrument-serif-latin-ext-400-italic.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 400;
+  src: url(fonts/instrument-serif-latin-400-italic.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --font-sans: "Geist Variable", sans-serif;
+  --font-display: "Instrument Serif", serif;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.15 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  --primary: oklch(0.15 0 0);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.9 0.006 40);
+  --secondary-foreground: oklch(0.15 0 0);
+  --muted: oklch(0.9 0.006 40);
+  --muted-foreground: oklch(0.45 0.01 40);
+  --accent: oklch(0.9 0.006 40);
+  --accent-foreground: oklch(0.15 0 0);
+  --destructive: oklch(0.7 0.19 22);
+  --border: oklch(0.82 0.008 40);
+  --input: oklch(0.82 0.008 40);
+  --ring: oklch(0.15 0 0);
+  --radius: 0;
+  --r-pill: 0;
+
+  --surface-border: oklch(0 0 0 / 0.1);
+  --control-hover-bg: oklch(0 0 0 / 0.08);
+  --lightbox-bg: oklch(1 0 0);
+
+  --cover-aspect: 1 / 1;
+  /* Photos grow from smaller while fading in; covers just appear (below). */
+  --reveal-animation: zoom-fade-in 1s ease backwards;
+
+  --yarl__color_button: oklch(0.2 0 0 / 0.8);
+  --yarl__color_button_active: oklch(0.1 0 0);
+  --yarl__color_button_disabled: oklch(0.2 0 0 / 0.3);
+  --yarl__button_filter: none;
+  --yarl__slide_description_color: oklch(0.2 0 0);
+  --yarl__slide_title_color: oklch(0.2 0 0);
+  --yarl__slide_captions_container_background: linear-gradient(to top, oklch(1 0 0 / 0.9), transparent);
+}
+
+/* Full width: the mosaic and the album header run edge to edge. */
+[data-slot="page"] {
+  max-width: none;
+  padding: 1.5rem 0;
+}
+
+/* The top bar: the site name as an italic wordmark, then the path in the
+   same serif, upright. */
+[data-slot="breadcrumb"] {
+  margin-inline: 1rem;
+}
+[data-slot="breadcrumb-list"] {
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+[data-slot="breadcrumb-item"]:first-child {
+  font-style: italic;
+  color: var(--foreground);
+}
+
+/* Covers: square, one column on phones, three from tablet width, four on desktop. */
+[data-slot="child-grid"] {
+  grid-template-columns: minmax(0, 1fr);
+  padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  [data-slot="child-grid"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  [data-slot="child-grid"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+[data-slot="album-card-media"],
+[data-slot="folder-card-media"] {
+  --reveal-animation: none;
+  background: transparent;
+}
+[data-slot="album-card"]:hover [data-slot="album-card-media"],
+[data-slot="folder-card"]:hover [data-slot="folder-card-media"] {
+  box-shadow:
+    0 10px 15px -3px oklch(0 0 0 / 0.4),
+    0 4px 6px -4px oklch(0 0 0 / 0.4);
+}
+[data-slot="album-card-body"],
+[data-slot="folder-card-body"] {
+  padding: 1rem 0 0;
+  text-align: center;
+}
+[data-slot="album-card-title"],
+[data-slot="folder-card-title"] {
+  font-size: 0.875rem;
+  line-height: 1.25;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* Album header: the title in the wordmark's serif. */
+[data-slot="album-hero-title"] {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: normal;
+}
+[data-slot="album-hero"]:not(:has([data-slot="album-hero-media"])) {
+  flex-direction: column;
+  align-items: center;
+  padding-inline: 1rem;
+  text-align: center;
+}
+[data-slot="album-hero"]:not(:has([data-slot="album-hero-media"])) [data-slot="album-hero-title"] {
+  justify-content: center;
+}
