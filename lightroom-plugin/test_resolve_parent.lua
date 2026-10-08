@@ -63,6 +63,21 @@ stub.http(function() return 500, "" end)
 ok, parentId = PublishTask.resolveParent(api, { getParent = function() return nil end }, true)
 assert(ok and parentId == nil and #stub.calls == 0)
 
+-- A catalog that stays busy past the timeout: the set gets no id, the run
+-- fails, and the create key survives so the next publish reuses the folder.
+local busy = stub.catalog({ withWriteAccessDo = function(_, name, fn)
+	if name ~= "Smugbox: store album set id" then fn() end
+	return "aborted"
+end })
+local fresh = makeSet("New", nil)
+fresh.localIdentifier = 42
+stub.http(function() return 201, '{"id":"f1","url":"u"}' end)
+ok, parentId = PublishTask.resolveParent(api, collectionIn(fresh))
+assert(not ok and tostring(parentId):match("album set id"), tostring(parentId))
+assert(fresh.stored == nil, "no id recorded")
+assert(busy.properties["createKey.42"] == "k", "create key must be kept")
+stub.catalog()
+
 -- isFolderGone recognises the backend's 400 for a stale parent_id only.
 assert(PublishTask.isFolderGone(false, 400, { error = "folder_not_found" }))
 assert(not PublishTask.isFolderGone(false, 404, { error = "folder_not_found" }))

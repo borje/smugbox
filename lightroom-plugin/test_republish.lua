@@ -33,6 +33,16 @@ n = PublishTask.markAllForRepublish({
 })
 assert(n == 0, "failure should yield 0")
 
+-- A catalog busy past the timeout runs nothing; nothing is reported flagged.
+stub.catalog({ withWriteAccessDo = function() return "aborted" end })
+local idle = publishedPhoto()
+n = PublishTask.markAllForRepublish({
+	type = function() return "LrPublishedCollection" end,
+	getPublishedPhotos = function() return { idle } end,
+})
+assert(n == 0 and idle.edited == nil, "busy catalog should yield 0: " .. n)
+stub.catalog({ withWriteAccessDo = function(_, _, fn) writes = writes + 1; fn() end })
+
 -- Nil or a collection set is a no-op.
 assert(PublishTask.markAllForRepublish(nil) == 0)
 assert(PublishTask.markAllForRepublish({ type = function() return "LrPublishedCollectionSet" end }) == 0)
@@ -58,7 +68,10 @@ local exportContext = {
 		type = function() return "LrPublishedCollection" end,
 		getParent = function() return nil end,
 		getName = function() return "Iceland" end,
-		getCollectionInfoSummary = function() return { collectionSettings = {} } end,
+		getCollectionInfoSummary = function()
+			assert(stub.inLrTask(), "getCollectionInfoSummary: must be called from within an LrTask")
+			return { collectionSettings = { password = "pw" } }
+		end,
 		getPublishedPhotos = function() return photos end,
 	},
 	exportSession = {
@@ -70,6 +83,7 @@ local exportContext = {
 }
 PublishTask.processRenderedPhotos({}, exportContext)
 assert(recorded.id == "new" and recorded.url == "https://example.test/a/new", "new album should be recorded")
+assert(stub.calls[2].body:match('"password":"pw"'), "album settings must reach the create: " .. stub.calls[2].body)
 for i, pp in ipairs(photos) do
 	assert(pp.edited == true, "photo " .. i .. " not flagged after recreate")
 end

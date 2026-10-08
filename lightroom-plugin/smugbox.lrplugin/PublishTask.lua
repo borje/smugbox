@@ -19,6 +19,25 @@ local Util = require "Util"
 
 local PublishTask = {}
 
+-- Runs fn under catalog write access; true only if it ran. Lightroom holds
+-- write access itself at times during a publish, so wait for it rather than
+-- fail at once. Past the timeout withWriteAccessDo returns without running
+-- fn or raising. LrTasks.pcall, not pcall: plain pcall is not an LrTask and
+-- catalog writes fail there.
+local function writeCatalog(name, fn)
+	local ran = false
+	local ok, err = LrTasks.pcall(function()
+		LrApplication.activeCatalog():withWriteAccessDo(name, function()
+			fn()
+			ran = true
+		end, { timeout = 30 })
+	end)
+	if not ran then
+		log:warnf("%s: %s", name, ok and "catalog busy" or tostring(err))
+	end
+	return ran
+end
+
 -- Album fields sent to the backend, from the collection name, the
 -- per-collection settings (password, listed, description) and the backend
 -- folder id of the containing album set ("" for the root).
@@ -103,19 +122,14 @@ function PublishTask.pendingCreateKey(collection)
 		return LrUUID.generateUUID()
 	end
 	local catalog = LrApplication.activeCatalog()
-	local read, existing = pcall(function() return catalog:getPropertyForPlugin(_PLUGIN, prop) end)
+	local read, existing = LrTasks.pcall(function() return catalog:getPropertyForPlugin(_PLUGIN, prop) end)
 	if read and type(existing) == "string" and existing ~= "" then
 		return existing
 	end
 	local key = LrUUID.generateUUID()
-	local ok, err = pcall(function()
-		catalog:withWriteAccessDo("Smugbox: remember create key", function()
-			catalog:setPropertyForPlugin(_PLUGIN, prop, key)
-		end)
+	writeCatalog("Smugbox: remember create key", function()
+		catalog:setPropertyForPlugin(_PLUGIN, prop, key)
 	end)
-	if not ok then
-		log:warnf("could not store the create key for %s: %s", prop, tostring(err))
-	end
 	return key
 end
 
@@ -127,14 +141,9 @@ function PublishTask.clearPendingCreateKey(collection)
 		return
 	end
 	local catalog = LrApplication.activeCatalog()
-	local ok, err = pcall(function()
-		catalog:withWriteAccessDo("Smugbox: forget create key", function()
-			catalog:setPropertyForPlugin(_PLUGIN, prop, nil)
-		end)
+	writeCatalog("Smugbox: forget create key", function()
+		catalog:setPropertyForPlugin(_PLUGIN, prop, nil)
 	end)
-	if not ok then
-		log:warnf("could not clear the create key for %s: %s", prop, tostring(err))
-	end
 end
 
 -- Walks the chain of published collection sets containing `collection`,
@@ -178,10 +187,13 @@ function PublishTask.resolveParent(api, collection, repair)
 				return false, folder
 			end
 			id = folder.id
-			LrApplication.activeCatalog():withWriteAccessDo("Smugbox: store album set id", function()
+			if not writeCatalog("Smugbox: store album set id", function()
 				s:setRemoteId(id)
 				s:setRemoteUrl(folder.url)
-			end)
+			end) then
+				-- The create key is left in place, so the next publish gets this folder back.
+				return false, "could not record the album set id in the catalog. Publish again."
+			end
 			PublishTask.clearPendingCreateKey(s)
 			log:infof("created album set %s (%s)", id, folder.url)
 		end
@@ -286,20 +298,19 @@ function PublishTask.markAllForRepublish(collection)
 	if not collection or collection:type() ~= "LrPublishedCollection" then
 		return 0
 	end
-	local ok, count = LrTasks.pcall(function()
-		local photos = collection:getPublishedPhotos()
-		LrApplication.activeCatalog():withWriteAccessDo("Smugbox: mark photos to re-publish", function()
-			for _, pp in ipairs(photos) do
-				pp:setEditedFlag(true)
-			end
-		end)
-		return #photos
+	local ok, photos = LrTasks.pcall(function()
+		return collection:getPublishedPhotos()
 	end)
 	if not ok then
-		log:warnf("mark photos to re-publish: %s", tostring(count))
+		log:warnf("mark photos to re-publish: %s", tostring(photos))
 		return 0
 	end
-	return count
+	local flagged = writeCatalog("Smugbox: mark photos to re-publish", function()
+		for _, pp in ipairs(photos) do
+			pp:setEditedFlag(true)
+		end
+	end)
+	return flagged and #photos or 0
 end
 
 -- Sends the cover to the server if it can be resolved; failures are logged,
@@ -335,10 +346,14 @@ function PublishTask.processRenderedPhotos(functionContext, exportContext)
 	local albumId = collectionInfo and collectionInfo.remoteId or nil
 	local collectionSettings = {}
 	if publishedCollection then
-		local ok, summary = pcall(function()
+		local ok, summary = LrTasks.pcall(function()
 			return publishedCollection:getCollectionInfoSummary()
 		end)
-		if ok and summary and summary.collectionSettings then
+		if not ok then
+			-- Going on with defaults would publish a password-protected album as public.
+			stopWithError("Smugbox: could not read the album settings: " .. tostring(summary))
+		end
+		if summary and summary.collectionSettings then
 			collectionSettings = summary.collectionSettings
 		end
 	end

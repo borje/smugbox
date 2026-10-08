@@ -9,6 +9,24 @@ package.path = "smugbox.lrplugin/?.lua;" .. package.path
 
 local stub = {}
 
+-- In Lightroom, code under plain pcall is not in an LrTask, so catalog
+-- access there fails. Count plain pcall depth; LrTasks.pcall is not counted.
+local taskPcall = pcall
+local plainDepth = 0
+local function leave(...)
+	plainDepth = plainDepth - 1
+	return ...
+end
+function pcall(...)
+	plainDepth = plainDepth + 1
+	return leave(taskPcall(...))
+end
+
+-- For stubbed catalog calls: true unless running under plain pcall.
+function stub.inLrTask()
+	return plainDepth == 0
+end
+
 stub.slept = {}
 stub.dialogs = {}
 
@@ -16,7 +34,7 @@ stub.sdk = {
 	LrHttp = {},
 	LrPathUtils = { leafName = function(p) return p end },
 	LrTasks = {
-		pcall = pcall,
+		pcall = taskPcall,
 		sleep = function(n) table.insert(stub.slept, n) end,
 	},
 	LrDialogs = {
@@ -61,10 +79,19 @@ end
 -- are backed by catalog.properties, which tests can read.
 function stub.catalog(catalog)
 	catalog = catalog or {}
-	catalog.withWriteAccessDo = catalog.withWriteAccessDo or function(_, _, fn) fn() end
+	-- Real Lightroom fails at once when another write is in progress unless
+	-- a timeout is given, so every write must pass one.
+	catalog.withWriteAccessDo = catalog.withWriteAccessDo or function(_, name, fn, params)
+		assert(params and params.timeout, name .. ": withWriteAccessDo without timeout")
+		assert(stub.inLrTask(), name .. ": withWriteAccessDo must be called from within an LrTask")
+		fn()
+	end
 	catalog.getPublishedCollectionByLocalIdentifier = catalog.getPublishedCollectionByLocalIdentifier or function() return nil end
 	catalog.properties = catalog.properties or {}
-	catalog.getPropertyForPlugin = catalog.getPropertyForPlugin or function(self, _, key) return self.properties[key] end
+	catalog.getPropertyForPlugin = catalog.getPropertyForPlugin or function(self, _, key)
+		assert(stub.inLrTask(), "getPropertyForPlugin: must be called from within an LrTask")
+		return self.properties[key]
+	end
 	catalog.setPropertyForPlugin = catalog.setPropertyForPlugin or function(self, _, key, value) self.properties[key] = value end
 	stub.sdk.LrApplication.activeCatalog = function() return catalog end
 	return catalog
