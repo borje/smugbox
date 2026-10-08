@@ -32,8 +32,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends libvips42t64 ca
     && mkdir -p /data /srv/frontend && chown smugbox:smugbox /data
 COPY --from=backend /out/smugbox /usr/local/bin/smugbox
 COPY --from=frontend /src/frontend/dist/ /srv/frontend/
+# Noir is the only built-in theme; the others in themes/ are user themes.
+COPY themes/noir/ /srv/themes/noir/
 ENV DATA_DIR=/data \
     FRONTEND_DIR=/srv/frontend \
+    BUILTIN_THEMES_DIR=/srv/themes \
     LOG_FORMAT=json
 USER smugbox
 VOLUME /data

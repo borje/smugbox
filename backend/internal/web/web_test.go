@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -8,13 +9,39 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/bege/smugbox/backend/internal/theme"
 )
+
+const indexHTML = "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n  </head>\n  <body>app</body>\n</html>\n"
+
+func testTheme(dark bool) *theme.Theme {
+	return &theme.Theme{
+		ID:       "demo",
+		Manifest: theme.Manifest{Smugbox: 1, Name: "Demo", Dark: dark, Gallery: "masonry"},
+		Files: map[string][]byte{
+			"theme.css":     []byte("body{}"),
+			"fonts/a.woff2": []byte("font"),
+		},
+		Hash: "abcd1234",
+	}
+}
+
+// handler serves dir with the title "Site" and a light test theme.
+func handler(t *testing.T, dir string) http.Handler {
+	t.Helper()
+	h, err := Handler(dir, "Site", testTheme(false))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return h
+}
 
 func setup(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
 	os.MkdirAll(filepath.Join(dir, "assets"), 0o755)
-	os.WriteFile(filepath.Join(dir, "index.html"), []byte("<html>app</html>"), 0o644)
+	os.WriteFile(filepath.Join(dir, "index.html"), []byte(indexHTML), 0o644)
 	os.WriteFile(filepath.Join(dir, "assets", "app-abc123.js"), []byte("console.log(1)"), 0o644)
 	os.WriteFile(filepath.Join(dir, "favicon.svg"), []byte("<svg/>"), 0o644)
 	return dir
@@ -27,10 +54,14 @@ func get(h http.Handler, method, path string) *httptest.ResponseRecorder {
 }
 
 func TestServesFilesAndSPAFallback(t *testing.T) {
-	h := Handler(setup(t))
-	for _, p := range []string{"/", "/a/some-album", "/a/x/y", "/nested/route"} {
+	h := handler(t, setup(t))
+	index := get(h, http.MethodGet, "/").Body.String()
+	if !strings.Contains(index, "<title>Site</title>") {
+		t.Fatalf("index not rewritten: %q", index)
+	}
+	for _, p := range []string{"/", "/index.html", "/a/some-album", "/a/x/y", "/nested/route"} {
 		rec := get(h, http.MethodGet, p)
-		if rec.Code != 200 || rec.Body.String() != "<html>app</html>" {
+		if rec.Code != 200 || rec.Body.String() != index {
 			t.Errorf("%s: code %d body %q", p, rec.Code, rec.Body.String())
 		}
 		if cc := rec.Header().Get("Cache-Control"); cc != "no-cache" {
@@ -56,7 +87,7 @@ func TestServesFilesAndSPAFallback(t *testing.T) {
 	if rec := get(h, http.MethodGet, "/missing.png"); rec.Code != 404 {
 		t.Fatalf("missing file with extension should 404, got %d", rec.Code)
 	}
-	if rec := get(h, http.MethodGet, "/assets/"); rec.Code != 200 || rec.Body.String() != "<html>app</html>" {
+	if rec := get(h, http.MethodGet, "/assets/"); rec.Code != 200 || rec.Body.String() != index {
 		t.Fatalf("directory path should fall back to index, got %d", rec.Code)
 	}
 	if rec := get(h, http.MethodPost, "/"); rec.Code != 405 {
@@ -67,7 +98,7 @@ func TestServesFilesAndSPAFallback(t *testing.T) {
 func TestTraversalIsNeutralised(t *testing.T) {
 	dir := setup(t)
 	os.WriteFile(filepath.Join(filepath.Dir(dir), "secret.txt"), []byte("secret"), 0o644)
-	h := Handler(dir)
+	h := handler(t, dir)
 	for _, p := range []string{"/../secret.txt", "/assets/../../secret.txt", "/%2e%2e/secret.txt"} {
 		req := httptest.NewRequest(http.MethodGet, "http://x"+p, nil)
 		rec := httptest.NewRecorder()
@@ -79,16 +110,115 @@ func TestTraversalIsNeutralised(t *testing.T) {
 }
 
 func TestNoFrontendDir(t *testing.T) {
-	h := Handler("")
+	h, err := Handler("", "Site", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, p := range []string{"/", "/a/x", "/index.html"} {
 		if rec := get(h, http.MethodGet, p); rec.Code != 404 {
 			t.Fatalf("%s: %d, want 404", p, rec.Code)
 		}
 	}
-	// A configured dir without index.html also yields 404 for routes.
-	h = Handler(t.TempDir())
-	if rec := get(h, http.MethodGet, "/a/x"); rec.Code != 404 {
-		t.Fatalf("missing index.html: %d", rec.Code)
+	// A configured dir without index.html is a startup error.
+	if _, err := Handler(t.TempDir(), "Site", testTheme(false)); err == nil {
+		t.Fatal("missing index.html accepted")
+	}
+}
+
+// site returns the JSON in the index's smugbox-site script element.
+func site(t *testing.T, index string) map[string]any {
+	t.Helper()
+	_, rest, ok := strings.Cut(index, `<script type="application/json" id="smugbox-site">`)
+	body, _, ok2 := strings.Cut(rest, "</script>")
+	if !ok || !ok2 {
+		t.Fatalf("no site JSON in %q", index)
+	}
+	var v map[string]any
+	if err := json.Unmarshal([]byte(body), &v); err != nil {
+		t.Fatalf("site JSON %q: %v", body, err)
+	}
+	return v
+}
+
+func TestIndexRewrite(t *testing.T) {
+	dir := setup(t)
+	h, err := Handler(dir, "Site", testTheme(true))
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := get(h, http.MethodGet, "/").Body.String()
+	for _, want := range []string{
+		"<title>Site</title>",
+		`<link rel="stylesheet" href="/theme/abcd1234/theme.css">`,
+		`<html class="dark" lang="en">`,
+		`id="smugbox-site"`,
+	} {
+		if n := strings.Count(index, want); n != 1 {
+			t.Errorf("%q appears %d times in %q", want, n, index)
+		}
+	}
+	// The tags go inside <head>.
+	if strings.Index(index, "id=\"smugbox-site\"") > strings.Index(index, "</head>") {
+		t.Errorf("site JSON after </head>: %q", index)
+	}
+	v := site(t, index)
+	th := v["theme"].(map[string]any)
+	if v["title"] != "Site" || th["name"] != "Demo" || th["gallery"] != "masonry" || th["dark"] != true || th["smugbox"] != 1.0 {
+		t.Fatalf("site JSON %v", v)
+	}
+
+	// Light theme: no class on <html>.
+	index = get(handler(t, dir), http.MethodGet, "/").Body.String()
+	if strings.Contains(index, "class=") {
+		t.Fatalf("light theme index has a class: %q", index)
+	}
+}
+
+func TestIndexEscapesTitleAndManifest(t *testing.T) {
+	th := testTheme(false)
+	th.Manifest.Name = "</script><script>alert(1)</script>"
+	h, err := Handler(setup(t), "<b>Site</b>", th)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := get(h, http.MethodGet, "/").Body.String()
+	if strings.Contains(index, "<b>") || strings.Contains(index, "alert(1)</script>") || strings.Count(index, "</script>") != 1 {
+		t.Fatalf("unescaped: %q", index)
+	}
+	if !strings.Contains(index, "<title>&lt;b&gt;Site&lt;/b&gt;</title>") {
+		t.Fatalf("title: %q", index)
+	}
+	v := site(t, index)
+	if v["title"] != "<b>Site</b>" || v["theme"].(map[string]any)["name"] != th.Manifest.Name {
+		t.Fatalf("site JSON does not round-trip: %v", v)
+	}
+}
+
+func TestThemeFiles(t *testing.T) {
+	h := handler(t, setup(t))
+	for p, ct := range map[string]string{
+		"/theme/abcd1234/theme.css":     "text/css; charset=utf-8",
+		"/theme/abcd1234/fonts/a.woff2": "font/woff2",
+	} {
+		rec := get(h, http.MethodGet, p)
+		if rec.Code != 200 || rec.Header().Get("Content-Type") != ct {
+			t.Errorf("%s: %d %q", p, rec.Code, rec.Header().Get("Content-Type"))
+		}
+		if cc := rec.Header().Get("Cache-Control"); !strings.Contains(cc, "immutable") {
+			t.Errorf("%s: Cache-Control %q", p, cc)
+		}
+	}
+	for _, p := range []string{
+		"/theme/abcd1234/missing.css",
+		"/theme/abcd1234/fonts/",
+		"/theme/abcd1234/fonts",
+		"/theme/abcd1234/",
+		"/theme/00000000/theme.css",
+		"/theme/",
+	} {
+		if rec := get(h, http.MethodGet, p); rec.Code != 404 {
+			t.Errorf("%s: %d, want 404", p, rec.Code)
+		}
 	}
 }
 
@@ -120,7 +250,7 @@ func getEnc(h http.Handler, path, accept string) *httptest.ResponseRecorder {
 }
 
 func TestServesPrecompressedSiblings(t *testing.T) {
-	h := Handler(precompressed(t))
+	h := handler(t, precompressed(t))
 	tests := []struct {
 		accept   string
 		encoding string
@@ -158,14 +288,16 @@ func TestServesPrecompressedSiblings(t *testing.T) {
 	}
 }
 
-func TestSPAFallbackUsesPrecompressedIndex(t *testing.T) {
-	h := Handler(precompressed(t))
-	for _, p := range []string{"/", "/a/some-album"} {
+// The rewritten index is served from memory; the build's precompressed
+// index.html siblings hold the unrewritten file and must be ignored.
+func TestIndexIgnoresPrecompressedSiblings(t *testing.T) {
+	h := handler(t, precompressed(t))
+	for _, p := range []string{"/", "/index.html", "/a/some-album"} {
 		rec := getEnc(h, p, "gzip")
-		if rec.Code != 200 || rec.Body.String() != "gzip-html" {
+		if rec.Code != 200 || !strings.Contains(rec.Body.String(), "<title>Site</title>") {
 			t.Errorf("%s: code %d body %q", p, rec.Code, rec.Body.String())
 		}
-		if enc := rec.Header().Get("Content-Encoding"); enc != "gzip" {
+		if enc := rec.Header().Get("Content-Encoding"); enc != "" {
 			t.Errorf("%s: Content-Encoding %q", p, enc)
 		}
 		if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/html") {
@@ -179,7 +311,7 @@ func TestSPAFallbackUsesPrecompressedIndex(t *testing.T) {
 
 func TestPrecompressedIsNotServedForItsOwnPath(t *testing.T) {
 	// A request for the sibling itself must not pick up a second encoding.
-	rec := getEnc(Handler(precompressed(t)), "/assets/app-abc123.js.gz", "gzip")
+	rec := getEnc(handler(t, precompressed(t)), "/assets/app-abc123.js.gz", "gzip")
 	if rec.Code != 200 {
 		t.Fatalf("code %d", rec.Code)
 	}
@@ -192,7 +324,7 @@ func TestPrecompressedIsNotServedForItsOwnPath(t *testing.T) {
 }
 
 func TestPrecompressedRevalidates(t *testing.T) {
-	h := Handler(precompressed(t))
+	h := handler(t, precompressed(t))
 	rec := getEnc(h, "/assets/app-abc123.js", "gzip")
 	mod := rec.Header().Get("Last-Modified")
 	if mod == "" {
@@ -210,7 +342,7 @@ func TestPrecompressedRevalidates(t *testing.T) {
 
 // A missing sibling must fall through to the plain file rather than 404.
 func TestMissingSiblingFallsBackToPlainFile(t *testing.T) {
-	rec := getEnc(Handler(setup(t)), "/assets/app-abc123.js", "zstd, br, gzip")
+	rec := getEnc(handler(t, setup(t)), "/assets/app-abc123.js", "zstd, br, gzip")
 	if rec.Code != 200 || rec.Body.String() != "console.log(1)" {
 		t.Fatalf("code %d body %q", rec.Code, rec.Body.String())
 	}

@@ -11,5 +11,8 @@ class ResizeObserverStub {
 globalThis.ResizeObserver = globalThis.ResizeObserver ?? (ResizeObserverStub as unknown as typeof ResizeObserver)
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
-afterEach(() => server.resetHandlers())
+afterEach(() => {
+  server.resetHandlers()
+  globalThis.document?.getElementById('smugbox-site')?.remove() // absent in node-environment tests
+})
 afterAll(() => server.close())

@@ -18,10 +18,17 @@ are fixed; do not re-open them without asking. Code, comments and docs are in En
   - `internal/image` — libvips via `github.com/cshum/vipsgen/vips816` (Debian 13 libvips 8.16).
   - `internal/auth` — API keys (sha256), album passwords (bcrypt), session cookie (HMAC).
   - `internal/web` — serves the frontend build from `FRONTEND_DIR` with SPA fallback,
-    preferring the `.br`/`.zst`/`.gz` siblings written by the frontend build.
+    preferring the `.br`/`.zst`/`.gz` siblings written by the frontend build. Rewrites
+    `index.html` once at startup with the title, theme stylesheet, `dark` class and the
+    `#smugbox-site` JSON, and serves the theme from memory under `/theme/<hash>/`.
+  - `internal/theme` — loads and validates `SITE_THEME` (zip or folder) from
+    `<DATA_DIR>/themes`, then `BUILTIN_THEMES_DIR`; only loaded when `FRONTEND_DIR` is set.
   - `internal/httpx` — Accept-Encoding parsing, used by `internal/web`.
 - `frontend/` — Vite + React + TypeScript (Tailwind v4, shadcn/ui, react-photo-album,
   yet-another-react-lightbox, TanStack Query, Vitest + MSW).
+- `themes/` — site themes (`theme.json` + `theme.css` + fonts); the contract is in
+  `themes/README.md`. Noir is the built-in one; the others are user themes.
+  `frontend/theme-dev-plugin.ts` injects `themes/$SITE_THEME` into `vite dev`.
 - `lightroom-plugin/smugbox.lrplugin/` — Lightroom Classic publish service (Lua).
 - `deploy/` — Dockerfile (build from repo root), docker-compose, backup script.
 
@@ -31,7 +38,7 @@ are fixed; do not re-open them without asking. Code, comments and docs are in En
 cd backend
 go build -p 1 ./...      # -p 1: this dev machine has 2 GB RAM; modernc.org/libc is heavy
 go test -p 1 ./...
-DATA_DIR=/tmp/smugbox go run ./cmd/smugbox serve
+DATA_DIR=/tmp/smugbox BUILTIN_THEMES_DIR=../themes go run ./cmd/smugbox serve
 go run ./cmd/smugbox admin create-api-key --label "Lightroom laptop"
 ```
 
@@ -47,3 +54,7 @@ storage per test; clock and randomness are injected through `api.Deps`.
   writes `.br`/`.zst`/`.gz` siblings during `npm run build` and `internal/web`
   picks one per Accept-Encoding. Dynamic responses are not compressed.
 - Write tests in the same change as the code. Keep `go vet` clean.
+- Themes win over core only because all core CSS is layered and never `!important`.
+  After `npx shadcn add`, move any new CSS variables into the `@layer base` block of
+  `frontend/src/index.css` and drop Tailwind `!` suffixes; `frontend/core-css.test.ts`
+  fails otherwise.

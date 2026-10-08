@@ -57,7 +57,7 @@ export function InfoPanel({ photos, open, onToggle }: Props) {
   if (!open || !photo) return null
 
   return (
-    <aside className="sb-info" aria-label="Photo details" {...stopNavigationEventsPropagation()}>
+    <aside className="sb-info" data-slot="photo-info" aria-label="Photo details" {...stopNavigationEventsPropagation()}>
       <header className="flex items-start justify-between gap-3">
         <h2 className="text-base font-medium leading-snug break-words">{photo.title || photo.filename}</h2>
         <button

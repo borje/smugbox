@@ -1,0 +1,167 @@
+/* Nyx2noir: Nyx2's layout on Noir's dimmed dark palette. The site name
+   keeps Nyx2's italic serif wordmark; the path, card titles and album
+   title are set in Geist, like Noir. */
+
+/* Geist and Instrument Serif (SIL OFL 1.1, fonts/OFL-*.txt), from Fontsource. */
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(fonts/geist-latin-ext-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url(fonts/geist-latin-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(fonts/instrument-serif-latin-ext-400-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url(fonts/instrument-serif-latin-400-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 400;
+  src: url(fonts/instrument-serif-latin-ext-400-italic.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 400;
+  src: url(fonts/instrument-serif-latin-400-italic.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --font-sans: "Geist Variable", sans-serif;
+  --font-display: "Instrument Serif", serif;
+
+  --background: oklch(0.24 0.004 286);
+  --foreground: oklch(0.94 0.004 265);
+  --card: oklch(0.268 0.006 258);
+  --card-foreground: oklch(0.94 0.004 265);
+  --popover: oklch(0.299 0.006 258);
+  --popover-foreground: oklch(0.94 0.004 265);
+  --primary: oklch(0.94 0.004 265);
+  --primary-foreground: oklch(0.24 0.004 286);
+  --secondary: oklch(0.299 0.006 258);
+  --secondary-foreground: oklch(0.9 0.004 265);
+  --muted: oklch(0.299 0.006 258);
+  --muted-foreground: oklch(0.659 0.016 278);
+  --accent: oklch(0.335 0.009 286);
+  --accent-foreground: oklch(0.94 0.004 265);
+  --destructive: oklch(0.7 0.19 22);
+  --border: oklch(0.36 0.009 268);
+  --input: oklch(0.36 0.009 268);
+  --ring: oklch(0.75 0.08 75);
+  --radius: 0;
+  --r-pill: 0;
+
+  --surface-border: oklch(1 0 0 / 0.1);
+  --control-hover-bg: oklch(1 0 0 / 0.1);
+  --lightbox-bg: oklch(0.24 0.004 286 / 0.97);
+
+  --cover-aspect: 1 / 1;
+
+  --yarl__slide_captions_container_background: linear-gradient(to top, oklch(0 0 0 / 0.7), transparent);
+}
+
+/* Full width: the mosaic and the album header run edge to edge. */
+[data-slot="page"] {
+  max-width: none;
+  padding: 1.5rem 0;
+}
+
+/* The top bar: the site name as an italic serif wordmark, then the path in
+   Geist. */
+[data-slot="breadcrumb"] {
+  margin-inline: 1rem;
+}
+[data-slot="breadcrumb-list"] {
+  align-items: baseline;
+  gap: 0.5rem;
+}
+[data-slot="breadcrumb-item"]:first-child {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-style: italic;
+  color: var(--foreground);
+}
+
+/* Covers: square, one column on phones, three from tablet width, four on desktop. */
+[data-slot="child-grid"] {
+  grid-template-columns: minmax(0, 1fr);
+  padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  [data-slot="child-grid"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  [data-slot="child-grid"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+[data-slot="album-card-media"],
+[data-slot="folder-card-media"] {
+  background: transparent;
+}
+[data-slot="album-card"]:hover [data-slot="album-card-media"],
+[data-slot="folder-card"]:hover [data-slot="folder-card-media"] {
+  box-shadow:
+    0 10px 15px -3px oklch(0 0 0 / 0.4),
+    0 4px 6px -4px oklch(0 0 0 / 0.4);
+}
+[data-slot="album-card-body"],
+[data-slot="folder-card-body"] {
+  padding: 1rem 0 0;
+}
+[data-slot="album-card-title"],
+[data-slot="folder-card-title"] {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+/* Album header: centred when there is no cover photo. */
+[data-slot="album-hero"]:not(:has([data-slot="album-hero-media"])) {
+  flex-direction: column;
+  align-items: center;
+  padding-inline: 1rem;
+  text-align: center;
+}
+[data-slot="album-hero"]:not(:has([data-slot="album-hero-media"])) [data-slot="album-hero-title"] {
+  justify-content: center;
+}
+
+/* Album photos grow from smaller while fading in; covers fade in like Noir's. */
+[data-slot="gallery"] {
+  --reveal-animation: zoom-fade-in 1s ease backwards;
+}

@@ -21,8 +21,12 @@ services:
       - "5173:5173"
     environment:
       API_PROXY_TARGET: http://backend:8080
+      # The dev server injects this theme from ../themes (frontend/theme-dev-plugin.ts).
+      SITE_THEME: ${SITE_THEME:-noir}
+      SITE_TITLE: ${SITE_TITLE:-Photo Gallery (dev)}
     volumes:
       - ../frontend:/app
+      - ../themes:/themes:ro
       # Keep the container's node_modules out of the host checkout so host and
       # container installs do not overwrite each other.
       - frontend-node-modules:/app/node_modules

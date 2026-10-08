@@ -37,3 +37,12 @@ export function renderAt(path: string, pattern: string, element: ReactElement) {
     </QueryClientProvider>,
   )
 }
+
+/** Stands in for the #smugbox-site JSON the server injects; setup.ts removes it after each test. */
+export function setSite(site: unknown) {
+  const el = document.createElement('script')
+  el.type = 'application/json'
+  el.id = 'smugbox-site'
+  el.textContent = JSON.stringify(site)
+  document.head.append(el)
+}

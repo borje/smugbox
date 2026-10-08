@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ImgHTMLAttributes } from 'react'
 import { useSearchParams } from 'react-router'
-import { RowsPhotoAlbum } from 'react-photo-album'
-import 'react-photo-album/rows.css'
-import './Gallery.css'
+import { ColumnsPhotoAlbum, MasonryPhotoAlbum, RowsPhotoAlbum } from 'react-photo-album'
 import Lightbox, { IconButton, createIcon, useLightboxState, type ControllerRef } from 'yet-another-react-lightbox'
 import Captions from 'yet-another-react-lightbox/plugins/captions'
 import Counter from 'yet-another-react-lightbox/plugins/counter'
@@ -11,13 +9,11 @@ import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen'
 import Slideshow from 'yet-another-react-lightbox/plugins/slideshow'
 import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
-import 'yet-another-react-lightbox/styles.css'
-import 'yet-another-react-lightbox/plugins/captions.css'
-import 'yet-another-react-lightbox/plugins/counter.css'
-import 'yet-another-react-lightbox/plugins/thumbnails.css'
 import type { Photo } from '@/api/types'
+import FadeImage from '@/components/FadeImage'
 import { InfoButton, InfoPanel } from '@/components/PhotoInfo'
 import { toGalleryPhoto, toSlide } from '@/lib/photos'
+import { getSite } from '@/lib/site'
 
 /** Only the caption is overlaid on the photo; date and camera data are in the info panel. */
 function slideDescription(photo: Photo) {
@@ -110,21 +106,48 @@ export default function Gallery({ photos }: { photos: Photo[] }) {
     setSearchParams(next, { replace })
   }
 
+  // The layout is the theme's pick (theme.json "gallery"); core owns the
+  // props per layout, so a library upgrade touches only this file.
+  // ponytail: no `sizes`. The theme's CSS sets the container width, which
+  // core can't know; the library default assumes a full-width container, so
+  // a theme that caps the width (Glass: 1504px) fetches one variant larger
+  // than needed on wider screens. Upgrade: a theme token for the width.
+  const layout = getSite().theme.gallery
+  const album = {
+    photos: items,
+    padding: 0,
+    defaultContainerWidth: 1504,
+    // The library rounds the container width down to one of these before
+    // layout, so the column thresholds below switch at these widths.
+    breakpoints: [360, 600, 900, 1200, 1536],
+    onClick: ({ index: i }: { index: number }) => setPhoto(photos[i].id, false),
+    render: { image: (props: ImgHTMLAttributes<HTMLImageElement>) => <FadeImage {...props} /> },
+  }
+
   if (photos.length === 0) {
-    return <p className="py-24 text-center text-muted-foreground">This album has no photos yet.</p>
+    return (
+      <p data-slot="empty-state" className="py-24 text-center text-muted-foreground">
+        This album has no photos yet.
+      </p>
+    )
   }
 
   return (
     <>
-      <RowsPhotoAlbum
-        photos={items}
-        targetRowHeight={320}
-        spacing={12}
-        defaultContainerWidth={1504}
-        sizes={{ size: '1504px', sizes: [{ viewport: '(max-width: 1536px)', size: 'calc(100vw - 32px)' }] }}
-        breakpoints={[360, 600, 900, 1200, 1536]}
-        onClick={({ index: i }) => setPhoto(photos[i].id, false)}
-      />
+      <div data-slot="gallery">
+        {layout === 'masonry' ? (
+          <MasonryPhotoAlbum {...album} spacing={4} columns={(width) => (width < 640 ? 2 : width < 1000 ? 3 : 4)} />
+        ) : layout === 'columns' ? (
+          // About one column per 300px, 1–5.
+          <ColumnsPhotoAlbum
+            {...album}
+            spacing={20}
+            columns={(width) => Math.min(5, Math.max(1, Math.round(width / 300)))}
+          />
+        ) : (
+          <RowsPhotoAlbum {...album} spacing={12} targetRowHeight={320} />
+        )}
+      </div>
       <Lightbox
         open={index >= 0}
         index={Math.max(index, 0)}
