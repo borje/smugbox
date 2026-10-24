@@ -45,7 +45,7 @@ func FromEnv(getenv func(string) string) (Config, error) {
 		LogFormat:        strings.ToLower(get("LOG_FORMAT", "text")),
 	}
 
-	mb, err := strconv.ParseInt(get("MAX_UPLOAD_MB", "100"), 10, 64)
+	mb, err := strconv.ParseInt(get("MAX_UPLOAD_MB", "2000"), 10, 64)
 	if err != nil || mb <= 0 {
 		return c, errors.New("MAX_UPLOAD_MB must be a positive integer")
 	}

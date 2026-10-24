@@ -50,7 +50,7 @@ background variants: 10/10 ready in 5.04s (1.98 photos/s) — complete
 ```
 
 Latency percentiles and throughput per phase, a table of failures grouped by
-the server's error code (`HTTP 415 not_jpeg`, …), and how long the variant
+the server's error code (`HTTP 415 unsupported_media_type`, …), and how long the variant
 worker needed to catch up after the uploads were acknowledged. That last
 number is the interesting one. Depending on the server, the display
 variants are rendered either inside the upload request — the cost lands in

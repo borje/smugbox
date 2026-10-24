@@ -3,6 +3,7 @@ package library
 import (
 	"math"
 	"os"
+	"strings"
 
 	"github.com/bege/smugbox/backend/internal/db"
 	"github.com/bege/smugbox/backend/internal/storage"
@@ -31,11 +32,15 @@ var renditions = []rendition{
 // file, so a corrupt upload is rejected before the client is told 201.
 var validate = renditions[0]
 
-// hasLarge reports whether p has a large variant. It has none when its
+// hasLarge reports whether p has a large variant. A photo has none when its
 // original is no bigger than large; the original is served in its place.
+// A video always has one, since its original is no image.
 func hasLarge(p *db.Photo) bool {
-	return max(p.Width, p.Height) > renditions[1].long
+	return isVideo(p) || max(p.Width, p.Height) > renditions[1].long
 }
+
+// isVideo reports whether p's original is a video.
+func isVideo(p *db.Photo) bool { return strings.HasPrefix(p.MimeType, "video/") }
 
 // Open opens the file that serves variant v of p and reports which variant
 // that file is: large of a photo that has none is its original.
@@ -43,7 +48,7 @@ func (l *Library) Open(p *db.Photo, v storage.Variant) (*os.File, storage.Varian
 	if v == storage.Large && !hasLarge(p) {
 		v = storage.Original
 	}
-	f, err := l.store.Open(p.AlbumID, p.ID, v)
+	f, err := l.store.Open(p.AlbumID, p.ID, v, p.MimeType)
 	return f, v, err
 }
 

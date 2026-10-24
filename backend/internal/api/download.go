@@ -65,7 +65,7 @@ func (s *Server) downloadAlbum(w http.ResponseWriter, r *http.Request) {
 	rc := http.NewResponseController(w)
 	seen := map[string]int{}
 	for _, p := range photos {
-		f, err := s.store.Open(album.ID, p.ID, storage.Original)
+		f, err := s.store.Open(album.ID, p.ID, storage.Original, p.MimeType)
 		if err != nil {
 			s.log.Error("zip: original missing", "album", album.ID, "photo", p.ID, "err", err)
 			continue

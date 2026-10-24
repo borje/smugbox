@@ -26,7 +26,7 @@ RUN CGO_ENABLED=1 go build -trimpath -ldflags="-s -w" -o /out/smugbox ./cmd/smug
 
 # --- Runtime ----------------------------------------------------------------
 FROM debian:trixie-slim
-RUN apt-get update && apt-get install -y --no-install-recommends libvips42t64 ca-certificates wget tzdata \
+RUN apt-get update && apt-get install -y --no-install-recommends libvips42t64 ffmpeg ca-certificates wget tzdata \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --uid 10001 --user-group --home-dir /data --no-create-home smugbox \
     && mkdir -p /data /srv/frontend && chown smugbox:smugbox /data

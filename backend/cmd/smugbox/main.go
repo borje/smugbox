@@ -28,6 +28,7 @@ import (
 	"github.com/bege/smugbox/backend/internal/image"
 	"github.com/bege/smugbox/backend/internal/storage"
 	"github.com/bege/smugbox/backend/internal/theme"
+	"github.com/bege/smugbox/backend/internal/video"
 	"github.com/bege/smugbox/backend/internal/web"
 )
 
@@ -120,6 +121,9 @@ func serve(cfg config.Config) error {
 
 	image.Startup()
 	defer image.Shutdown()
+	if !video.Available() {
+		logger.Warn("ffmpeg or ffprobe not found in PATH; video uploads will fail")
+	}
 
 	database, store, err := openData(ctx, cfg)
 	if err != nil {

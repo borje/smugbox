@@ -39,7 +39,7 @@ func TestGCKeepsLivePhotosAndFreshDirs(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range []string{photoA, photoB} {
-		if _, err := store.WriteFile(albumA, p, storage.Original, bytes.NewReader([]byte{1})); err != nil {
+		if _, err := store.WriteFile(albumA, p, storage.Original, "image/jpeg", bytes.NewReader([]byte{1})); err != nil {
 			t.Fatal(err)
 		}
 	}

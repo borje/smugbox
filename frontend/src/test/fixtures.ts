@@ -5,6 +5,7 @@ export function photo(slug: string, id: string, overrides: Partial<Photo> = {}):
   return {
     id,
     filename: `${id}.jpg`,
+    mime_type: 'image/jpeg',
     width: 3000,
     height: 2000,
     urls: {

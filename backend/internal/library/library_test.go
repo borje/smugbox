@@ -147,7 +147,7 @@ func TestReplaceWaitsForRenderInFlight(t *testing.T) {
 	if !e.photo(p.ID).VariantsReady {
 		t.Fatal("photo not ready after rendering the new original")
 	}
-	thumb, err := e.store.Path(e.album.ID, p.ID, storage.Thumb)
+	thumb, err := e.store.Path(e.album.ID, p.ID, storage.Thumb, "image/jpeg")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +226,7 @@ func TestHeadCaptureAcrossShortWrites(t *testing.T) {
 					t.Fatalf("Write(%x) = %d, %v", w, n, err)
 				}
 			}
-			if up.headLen != 3 || up.head != tc.want {
+			if up.headLen < 3 || [3]byte(up.head[:3]) != tc.want {
 				t.Fatalf("head = %x (len %d), want %x", up.head, up.headLen, tc.want)
 			}
 		})
@@ -294,7 +294,7 @@ func TestLargeFallsBackToOriginal(t *testing.T) {
 	if served, w, h := e.open(p.ID, storage.Large); served != storage.Original || w != 1200 || h != 800 {
 		t.Fatalf("large served %s %dx%d, want original 1200x800", served, w, h)
 	}
-	if _, err := e.store.Stat(e.album.ID, p.ID, storage.Large); !errors.Is(err, os.ErrNotExist) {
+	if _, err := e.store.Stat(e.album.ID, p.ID, storage.Large, "image/jpeg"); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("stale large.jpg left behind: %v", err)
 	}
 	if served, w, _ := e.open(p.ID, storage.Medium); served != storage.Medium || w != 1200 {

@@ -118,7 +118,7 @@ cd tools/loadtest
 | `FRONTEND_DIR` | unset | Built frontend to serve; unset gives 404 for non-API paths. |
 | `LISTEN_ADDR` | `:8080` | Listen address. |
 | `TRUSTED_PROXY_CIDR` | unset | Networks whose `X-Forwarded-For` is trusted. |
-| `MAX_UPLOAD_MB` | `100` | Largest accepted upload. |
+| `MAX_UPLOAD_MB` | `2000` | Largest accepted upload (videos are large). |
 | `LOG_LEVEL`, `LOG_FORMAT` | `info`, `text` | Logging; use `json` in production. |
 
 ## API overview

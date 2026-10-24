@@ -1,7 +1,8 @@
 import { ColumnsPhotoAlbum, MasonryPhotoAlbum, RowsPhotoAlbum } from 'react-photo-album'
+import { render } from '@testing-library/react'
 import Gallery from '@/components/Gallery'
 import { renderAt, setSite } from '@/test/render'
-import { summerDetail } from '@/test/fixtures'
+import { photo, summerDetail } from '@/test/fixtures'
 
 vi.mock('react-photo-album', () => ({
   RowsPhotoAlbum: vi.fn(() => null),
@@ -51,6 +52,15 @@ describe('Gallery layouts', () => {
     expect([639, 640, 999, 1000].map(columns)).toEqual([2, 3, 3, 4])
   })
 
+  it('badges video tiles with their length', () => {
+    renderWith('rows')
+    type Extras = (p: object, c: { photo: { videoMs?: number } }) => React.ReactNode
+    const extras = (propsOf(RowsPhotoAlbum).render as { extras: Extras }).extras
+    expect(extras({}, { photo: {} })).toBe(false)
+    const { container } = render(<>{extras({}, { photo: { videoMs: 32000 } })}</>)
+    expect(container.querySelector('[data-slot="video-badge"]')?.textContent).toBe('0:32')
+  })
+
   it('falls back to rows without site JSON', () => {
     renderWith()
     expect(RowsPhotoAlbum).toHaveBeenCalled()
@@ -73,5 +83,17 @@ describe('Gallery layouts', () => {
     renderWith('rows')
     expect(propsOf(RowsPhotoAlbum).sizes).toEqual({ size: '1000px' })
     vi.unstubAllGlobals()
+  })
+})
+
+describe('Gallery lightbox', () => {
+  it('plays a video slide from its original', () => {
+    const clip = photo('summer-2026', 'v1', { filename: 'CLIP.mp4', mime_type: 'video/mp4', duration_ms: 32000 })
+    renderAt('/a/summer-2026?photo=v1', '/a/:slug', <Gallery photos={[clip]} />)
+    const video = document.querySelector('video')
+    expect(video).not.toBeNull()
+    expect(video!.controls).toBe(true)
+    expect(video!.getAttribute('poster')).toBe(clip.urls.large)
+    expect(video!.querySelector('source')?.getAttribute('src')).toBe(clip.urls.original)
   })
 })

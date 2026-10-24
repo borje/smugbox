@@ -5,11 +5,15 @@ A self-hosted photo gallery that Lightroom Classic publishes to and visitors bro
 ## Photos
 
 **Photo**:
-One image in an album, identified by its Lightroom photo UUID within that album.
+One image or video in an album, identified by its Lightroom photo UUID within that album.
 _Avoid_: Image, picture, asset
 
+**Video**:
+A photo whose original is an MP4 or QuickTime file; its variants are rendered from a poster frame.
+_Avoid_: Clip, movie
+
 **Original**:
-The file exactly as Lightroom exported it; every variant is rendered from it.
+The file exactly as Lightroom exported it; every variant is rendered from it (from its poster frame, for a video).
 _Avoid_: Master, source, upload
 
 **Variant**:

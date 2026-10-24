@@ -16,8 +16,11 @@ are fixed; do not re-open them without asking. Code, comments and docs are in En
     original, the variants and `variants_ready` in agreement. Terms in `GLOSSARY.md`.
   - `internal/db` — SQLite via `modernc.org/sqlite`, goose migrations embedded from
     `internal/db/migrations`. Single connection (`SetMaxOpenConns(1)`).
-  - `internal/storage` — `<DATA_DIR>/photos/<album>/<photo>/<variant>.jpg`; writes go to
+  - `internal/storage` — `<DATA_DIR>/photos/<album>/<photo>/<variant>.jpg` (a video original is
+    `original.mp4`/`.mov`); writes go to
     `<DATA_DIR>/incoming` and are renamed into place. Paths only from UUIDs + variant whitelist.
+  - `internal/video` — ffprobe/ffmpeg via `os/exec`: probes MP4/QuickTime uploads and
+    extracts the poster frame the worker renders a video's display variants from.
   - `internal/image` — libvips via `github.com/cshum/vipsgen/vips816` (Debian 13 libvips 8.16).
   - `internal/auth` — API keys (sha256), album passwords (bcrypt), session cookie (HMAC).
   - `internal/web` — serves the frontend build from `FRONTEND_DIR` with SPA fallback,
@@ -45,8 +48,9 @@ DATA_DIR=/tmp/smugbox BUILTIN_THEMES_DIR=../themes go run ./cmd/smugbox serve
 go run ./cmd/smugbox admin create-api-key --label "Lightroom laptop"
 ```
 
-Requires `libvips-dev` and `pkg-config` (apt). Tests use a temp SQLite file and temp
-storage per test; clock and randomness are injected through `api.Deps`.
+Requires `libvips-dev`, `pkg-config` and `ffmpeg` (apt; video tests skip without ffmpeg).
+Tests use a temp SQLite file and temp storage per test; clock and randomness are injected
+through `api.Deps`.
 
 ## Conventions
 

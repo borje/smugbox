@@ -72,14 +72,15 @@ func (s *Server) ingest(w http.ResponseWriter, r *http.Request, a *db.Album, pho
 
 // libraryStatus maps the library's error codes to HTTP statuses.
 var libraryStatus = map[string]int{
-	"missing_lr_photo_uuid": http.StatusBadRequest,
-	"missing_file":          http.StatusBadRequest,
-	"invalid_taken_at":      http.StatusBadRequest,
-	"invalid_keywords":      http.StatusBadRequest,
-	"invalid_exif":          http.StatusBadRequest,
-	"photo_not_found":       http.StatusNotFound,
-	"not_jpeg":              http.StatusUnsupportedMediaType,
-	"invalid_image":         http.StatusUnprocessableEntity,
+	"missing_lr_photo_uuid":  http.StatusBadRequest,
+	"missing_file":           http.StatusBadRequest,
+	"invalid_taken_at":       http.StatusBadRequest,
+	"invalid_keywords":       http.StatusBadRequest,
+	"invalid_exif":           http.StatusBadRequest,
+	"photo_not_found":        http.StatusNotFound,
+	"unsupported_media_type": http.StatusUnsupportedMediaType,
+	"invalid_image":          http.StatusUnprocessableEntity,
+	"invalid_video":          http.StatusUnprocessableEntity,
 }
 
 // libraryError answers a *library.Error with its code, anything else 500.

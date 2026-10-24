@@ -38,11 +38,11 @@ func TestPathsRequireUUIDsAndKnownVariants(t *testing.T) {
 		{albumA, strings.ToUpper(photoA), "original"}, // canonical lowercase form only
 	}
 	for _, b := range bad {
-		if _, err := s.Path(b[0], b[1], Variant(b[2])); !errors.Is(err, ErrInvalidID) {
+		if _, err := s.Path(b[0], b[1], Variant(b[2]), "image/jpeg"); !errors.Is(err, ErrInvalidID) {
 			t.Errorf("Path(%q,%q,%q) err = %v, want ErrInvalidID", b[0], b[1], b[2], err)
 		}
 	}
-	p, err := s.Path(albumA, photoA, Thumb)
+	p, err := s.Path(albumA, photoA, Thumb, "image/jpeg")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,10 +60,10 @@ func TestPathsRequireUUIDsAndKnownVariants(t *testing.T) {
 
 func TestWriteReadAndAtomicReplace(t *testing.T) {
 	s := newStore(t)
-	if _, err := s.WriteFile(albumA, photoA, Original, strings.NewReader("first")); err != nil {
+	if _, err := s.WriteFile(albumA, photoA, Original, "image/jpeg", strings.NewReader("first")); err != nil {
 		t.Fatal(err)
 	}
-	f, err := s.Open(albumA, photoA, Original)
+	f, err := s.Open(albumA, photoA, Original, "image/jpeg")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,10 +78,10 @@ func TestWriteReadAndAtomicReplace(t *testing.T) {
 		t.Fatal(err)
 	}
 	io.WriteString(st, "second")
-	if err := s.Commit(st, albumA, photoA, Original); err != nil {
+	if err := s.Commit(st, albumA, photoA, Original, "image/jpeg"); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Commit(st, albumA, photoA, Original); err == nil {
+	if err := s.Commit(st, albumA, photoA, Original, "image/jpeg"); err == nil {
 		t.Fatal("double commit should fail")
 	}
 	got, _ = os.ReadFile(filepath.Join(s.Root(), "photos", albumA, photoA, "original.jpg"))
@@ -100,7 +100,7 @@ func TestWriteReadAndAtomicReplace(t *testing.T) {
 	if _, err := os.Stat(ab.Path()); !errors.Is(err, fs.ErrNotExist) {
 		t.Fatalf("aborted file still exists: %v", err)
 	}
-	if _, err := s.Stat(albumA, photoA, Large); !errors.Is(err, fs.ErrNotExist) {
+	if _, err := s.Stat(albumA, photoA, Large, "image/jpeg"); !errors.Is(err, fs.ErrNotExist) {
 		t.Fatalf("missing variant stat: %v", err)
 	}
 }
@@ -108,7 +108,7 @@ func TestWriteReadAndAtomicReplace(t *testing.T) {
 func TestRemoveAndOrphans(t *testing.T) {
 	s := newStore(t)
 	for _, p := range []string{photoA, photoB} {
-		if _, err := s.WriteFile(albumA, p, Original, bytes.NewReader([]byte{1})); err != nil {
+		if _, err := s.WriteFile(albumA, p, Original, "image/jpeg", bytes.NewReader([]byte{1})); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -122,7 +122,7 @@ func TestRemoveAndOrphans(t *testing.T) {
 		t.Fatal(err)
 	}
 	// A photo committed after the walk is not a candidate at all.
-	if _, err := s.WriteFile(albumA, photoC, Original, bytes.NewReader([]byte{1})); err != nil {
+	if _, err := s.WriteFile(albumA, photoC, Original, "image/jpeg", bytes.NewReader([]byte{1})); err != nil {
 		t.Fatal(err)
 	}
 	known := func(a, p string) bool { return a == albumA && p == photoA }
