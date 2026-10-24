@@ -2,6 +2,7 @@
 /data/
 /backend/data/
 /frontend/dist/
+/dist/
 /frontend/node_modules/
 /deploy/.env
 
