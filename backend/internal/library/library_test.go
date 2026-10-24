@@ -301,3 +301,27 @@ func TestLargeFallsBackToOriginal(t *testing.T) {
 		t.Fatalf("medium served %s %d wide, want medium 1200 (never upscaled)", served, w)
 	}
 }
+
+func TestVariantSize(t *testing.T) {
+	big := &db.Photo{Width: 6000, Height: 4000}
+	small := &db.Photo{Width: 1000, Height: 1500}
+	cases := []struct {
+		p    *db.Photo
+		v    storage.Variant
+		w, h int
+	}{
+		{big, storage.Thumb, 400, 267},
+		{big, storage.Small, 800, 533},
+		{big, storage.Medium, 1600, 1067},
+		{big, storage.Large, 2560, 1707},
+		{small, storage.Thumb, 267, 400},
+		{small, storage.Medium, 1000, 1500},
+		{small, storage.Large, 1000, 1500},
+		{small, storage.Original, 1000, 1500},
+	}
+	for _, c := range cases {
+		if w, h := VariantSize(c.p, c.v); w != c.w || h != c.h {
+			t.Errorf("%dx%d %s = %dx%d, want %dx%d", c.p.Width, c.p.Height, c.v, w, h, c.w, c.h)
+		}
+	}
+}

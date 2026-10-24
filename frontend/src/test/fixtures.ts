@@ -15,6 +15,12 @@ export function photo(slug: string, id: string, overrides: Partial<Photo> = {}):
       original: base + 'original',
       download: base + 'original?download=1',
     },
+    sizes: {
+      thumb: { width: 400, height: 267 },
+      small: { width: 800, height: 533 },
+      medium: { width: 1600, height: 1067 },
+      large: { width: 2560, height: 1707 },
+    },
     ...overrides,
   }
 }
@@ -69,7 +75,16 @@ export const summerDetail: AlbumDetail = {
         iso: 'ISO 100',
       },
     }),
-    photo('summer-2026', 'p2', { width: 600, height: 900 }),
+    photo('summer-2026', 'p2', {
+      width: 600,
+      height: 900,
+      sizes: {
+        thumb: { width: 267, height: 400 },
+        small: { width: 533, height: 800 },
+        medium: { width: 600, height: 900 },
+        large: { width: 600, height: 900 },
+      },
+    }),
   ],
 }
 

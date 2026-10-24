@@ -1,6 +1,7 @@
 package library
 
 import (
+	"math"
 	"os"
 
 	"github.com/bege/smugbox/backend/internal/db"
@@ -44,4 +45,16 @@ func (l *Library) Open(p *db.Photo, v storage.Variant) (*os.File, storage.Varian
 	}
 	f, err := l.store.Open(p.AlbumID, p.ID, v)
 	return f, v, err
+}
+
+// VariantSize is the width and height of variant v of p: the original's
+// dimensions scaled down (never up) to the variant's long side.
+func VariantSize(p *db.Photo, v storage.Variant) (width, height int) {
+	for _, r := range renditions {
+		if r.variant == v && (v != storage.Large || hasLarge(p)) {
+			scale := min(1, float64(r.long)/float64(max(p.Width, p.Height)))
+			return int(math.Round(float64(p.Width) * scale)), int(math.Round(float64(p.Height) * scale))
+		}
+	}
+	return p.Width, p.Height
 }

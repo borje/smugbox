@@ -20,6 +20,19 @@ export interface PhotoURLs {
   download: string
 }
 
+export interface Size {
+  width: number
+  height: number
+}
+
+/** Dimensions of each display variant, as the backend renders them. */
+export interface PhotoSizes {
+  thumb: Size
+  small: Size
+  medium: Size
+  large: Size
+}
+
 export interface Photo {
   id: string
   filename: string
@@ -31,6 +44,7 @@ export interface Photo {
   taken_at?: string
   exif?: Record<string, string>
   urls: PhotoURLs
+  sizes: PhotoSizes
 }
 
 /** One entry in a breadcrumb trail, root first. */

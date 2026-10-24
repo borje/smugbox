@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/bege/smugbox/backend/internal/db"
+	"github.com/bege/smugbox/backend/internal/library"
 	"github.com/bege/smugbox/backend/internal/storage"
 )
 
@@ -29,6 +30,20 @@ type photoURLs struct {
 	Download string `json:"download"`
 }
 
+type size struct {
+	Width  int `json:"width"`
+	Height int `json:"height"`
+}
+
+// photoSizes are the dimensions of the display variants, so the frontend
+// can build srcSet without knowing how the backend renders them.
+type photoSizes struct {
+	Thumb  size `json:"thumb"`
+	Small  size `json:"small"`
+	Medium size `json:"medium"`
+	Large  size `json:"large"`
+}
+
 type photoJSON struct {
 	ID       string          `json:"id"`
 	Filename string          `json:"filename"`
@@ -40,6 +55,7 @@ type photoJSON struct {
 	TakenAt  string          `json:"taken_at,omitempty"`
 	Exif     json.RawMessage `json:"exif,omitempty"`
 	URLs     photoURLs       `json:"urls"`
+	Sizes    photoSizes      `json:"sizes"`
 }
 
 type crumb struct {
@@ -53,6 +69,11 @@ type albumDetail struct {
 	CoverPhotoID string      `json:"cover_photo_id,omitempty"` // id of the photo /cover shows; one of Photos
 	DownloadURL  string      `json:"download_url"`
 	Photos       []photoJSON `json:"photos"`
+}
+
+func variantSize(p *db.Photo, v storage.Variant) size {
+	w, h := library.VariantSize(p, v)
+	return size{w, h}
 }
 
 func apiAlbumPath(slug string) string { return "/api/albums/" + slug }
@@ -88,6 +109,12 @@ func toPhotoJSON(slug string, p *db.Photo) photoJSON {
 			Large:    base + string(storage.Large),
 			Original: base + string(storage.Original),
 			Download: base + string(storage.Original) + "?download=1",
+		},
+		Sizes: photoSizes{
+			Thumb:  variantSize(p, storage.Thumb),
+			Small:  variantSize(p, storage.Small),
+			Medium: variantSize(p, storage.Medium),
+			Large:  variantSize(p, storage.Large),
 		},
 	}
 }

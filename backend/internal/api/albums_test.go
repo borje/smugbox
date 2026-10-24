@@ -92,6 +92,10 @@ func TestAlbumListDetailAndCover(t *testing.T) {
 	if ph.URLs.Thumb != base+"thumb" || ph.URLs.Large != base+"large" || ph.URLs.Download != base+"original?download=1" {
 		t.Fatalf("urls: %+v", ph.URLs)
 	}
+	// 600x400 is smaller than every variant but thumb; large is the original.
+	if ph.Sizes.Thumb != (size{400, 267}) || ph.Sizes.Medium != (size{600, 400}) || ph.Sizes.Large != (size{600, 400}) {
+		t.Fatalf("sizes: %+v", ph.Sizes)
+	}
 	if detail.Photos[1].ID != p2 {
 		t.Fatal("photo order")
 	}

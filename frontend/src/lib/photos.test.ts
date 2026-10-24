@@ -3,8 +3,8 @@ import { buildSrcSet, photoDetails, toSlide } from './photos'
 import { formatDateRange, formatDateTime, parseTakenAt, photoCount } from './format'
 
 describe('buildSrcSet', () => {
-  it('lists every generated size for a large landscape original', () => {
-    const set = buildSrcSet(photo('a', 'x', { width: 6000, height: 4000 }))
+  it('lists every variant size the backend reports', () => {
+    const set = buildSrcSet(photo('a', 'x'))
     expect(set.map((e) => [e.width, e.height])).toEqual([
       [400, 267],
       [800, 533],
@@ -14,8 +14,19 @@ describe('buildSrcSet', () => {
     expect(set[3].src).toBe('/api/albums/a/photos/x/large')
   })
 
-  it('never upscales and collapses equal sizes for portraits', () => {
-    const set = buildSrcSet(photo('a', 'x', { width: 1000, height: 1500 }))
+  it('collapses variants of equal size', () => {
+    const set = buildSrcSet(
+      photo('a', 'x', {
+        width: 1000,
+        height: 1500,
+        sizes: {
+          thumb: { width: 267, height: 400 },
+          small: { width: 533, height: 800 },
+          medium: { width: 1000, height: 1500 },
+          large: { width: 1000, height: 1500 },
+        },
+      }),
+    )
     expect(set.map((e) => [e.width, e.height])).toEqual([
       [267, 400],
       [533, 800],
