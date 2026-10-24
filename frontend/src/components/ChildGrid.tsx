@@ -3,7 +3,7 @@ import AlbumCard from '@/components/AlbumCard'
 import FolderCard from '@/components/FolderCard'
 import { Skeleton } from '@/components/ui/skeleton'
 
-const grid = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,var(--card-grid-min)),1fr))] gap-[var(--card-gap)]'
+export const cardGrid = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,var(--card-grid-min)),1fr))] gap-[var(--card-gap)]'
 
 // Folders first, then albums — both already arrive newest-content-first
 // from the backend. Shared by the root page and folder pages.
@@ -24,7 +24,7 @@ export default function ChildGrid({
     )
   }
   return (
-    <div data-slot="child-grid" className={grid}>
+    <div data-slot="child-grid" className={cardGrid}>
       {folders.map((folder) => (
         <FolderCard key={folder.slug} folder={folder} />
       ))}
@@ -38,7 +38,7 @@ export default function ChildGrid({
 /** Placeholder cards in the same grid while a listing loads. */
 export function ChildGridSkeleton({ label }: { label: string }) {
   return (
-    <div data-slot="child-grid" className={grid} aria-busy="true" aria-label={label}>
+    <div data-slot="child-grid" className={cardGrid} aria-busy="true" aria-label={label}>
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="space-y-3">
           <Skeleton className="aspect-[var(--cover-aspect)] w-full rounded-media" />

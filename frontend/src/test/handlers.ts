@@ -1,6 +1,8 @@
 import { http, HttpResponse } from 'msw'
 import {
   emptyAlbum,
+  icelandAlbum,
+  photo,
   icelandDetail,
   secretAlbum,
   summerAlbum,
@@ -17,6 +19,23 @@ export const handlers = [
   http.get('/api/albums', () =>
     HttpResponse.json({ folders: [travelFolder], albums: [secretAlbum, summerAlbum, emptyAlbum] }),
   ),
+
+  http.get('/api/search', ({ request }) => {
+    const { searchParams } = new URL(request.url)
+    const q = searchParams.get('q')
+    const folder = searchParams.get('folder')
+    if (folder === 'travel')
+      return HttpResponse.json({ breadcrumb: [{ slug: 'travel', name: 'Travel' }], folders: [], albums: [icelandAlbum], photos: [] })
+    if (folder) return HttpResponse.json({ error: 'folder_not_found' }, { status: 404 })
+    if (q === 'iceland')
+      return HttpResponse.json({
+        folders: [travelFolder],
+        albums: [icelandAlbum],
+        photos: [{ ...photo('iceland', 'i1', { title: 'Glacier' }), album_slug: 'iceland' }],
+      })
+    if (q === 'travel') return HttpResponse.json({ folders: [travelFolder], albums: [], photos: [] })
+    return HttpResponse.json({ folders: [], albums: [], photos: [] })
+  }),
 
   http.get('/api/folders/:slug', ({ params }) => {
     switch (params.slug) {

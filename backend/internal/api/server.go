@@ -144,6 +144,7 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/albums/{slug}/photos/{photo_id}/{variant}", s.getPhotoVariant)
 	mux.HandleFunc("GET /api/albums/{slug}/download", s.downloadAlbum)
 	mux.Handle("GET /api/folders/{slug}", visitorJSON(s.getFolder))
+	mux.Handle("GET /api/search", visitorJSON(s.search))
 }
 
 // ServeHTTP implements http.Handler.

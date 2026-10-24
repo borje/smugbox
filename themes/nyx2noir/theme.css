@@ -100,7 +100,9 @@
 
 /* The top bar: the site name as an italic serif wordmark, then the path in
    Geist. */
-[data-slot="breadcrumb"] {
+[data-slot="breadcrumb"],
+[data-slot="search-tabs"],
+[data-slot="search-scope"] {
   margin-inline: 1rem;
 }
 [data-slot="breadcrumb-list"] {

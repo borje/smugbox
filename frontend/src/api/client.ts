@@ -1,4 +1,4 @@
-import type { AlbumDetail, FolderDetail, RootListing } from './types'
+import type { AlbumDetail, FolderDetail, RootListing, SearchResult } from './types'
 
 /** Non-2xx response. `code` is the backend's snake_case error code. */
 export class ApiError extends Error {
@@ -60,6 +60,8 @@ export const api = {
     request<FolderDetail>(`/api/folders/${encodeURIComponent(slug)}`),
   getAlbum: (slug: string): Promise<AlbumDetail> =>
     request<AlbumDetail>(`/api/albums/${encodeURIComponent(slug)}`),
+  search: (q: string, folder?: string): Promise<SearchResult> =>
+    request<SearchResult>(`/api/search?${new URLSearchParams(folder ? { q, folder } : { q })}`),
   unlock: (slug: string, password: string): Promise<void> =>
     request<void>(`/api/albums/${encodeURIComponent(slug)}/unlock`, {
       method: 'POST',
