@@ -2,15 +2,8 @@ package api
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"slices"
 	"sync"
 	"time"
-
-	"github.com/bege/smugbox/backend/internal/db"
-	"github.com/bege/smugbox/backend/internal/image"
-	"github.com/bege/smugbox/backend/internal/storage"
 )
 
 // variantWorker renders the display variants of uploaded photos outside the
@@ -145,7 +138,7 @@ func (w *variantWorker) drain(ctx context.Context) {
 		start := time.Now()
 		// Once the resize has started, finish committing it even if the
 		// process is shutting down: the files and the flag must agree.
-		if err := w.generate(context.WithoutCancel(ctx), p); err != nil {
+		if err := w.s.lib.Render(context.WithoutCancel(ctx), p.AlbumID, p.ID); err != nil {
 			w.s.log.Error("generate variants; photo stays hidden until the next retry", "album", p.AlbumID, "photo", p.ID, "retry_in", w.retry, "err", err)
 			w.mu.Lock()
 			w.failed[key] = true
@@ -156,72 +149,4 @@ func (w *variantWorker) drain(ctx context.Context) {
 		// snapshot; uploads that arrive meanwhile show up in the next drain.
 		w.s.log.Info("variants ready", "album", p.AlbumID, "photo", p.ID, "duration_ms", time.Since(start).Milliseconds(), "remaining", len(photos)-i-1)
 	}
-}
-
-// generate renders the display variants of p from its stored original,
-// commits them, and marks the row ready. It is a no-op that reports nil
-// when the photo was deleted in the meantime.
-func (w *variantWorker) generate(ctx context.Context, p *db.Photo) error {
-	src, err := w.s.store.Path(p.AlbumID, p.ID, storage.Original)
-	if err != nil {
-		return err
-	}
-	staged := map[storage.Variant]*storage.Staged{}
-	defer func() {
-		for _, st := range staged {
-			st.Abort()
-		}
-	}()
-	produced, err := image.Derive(src, image.Info{Width: p.Width, Height: p.Height}, image.Deferred, func(v storage.Variant) (string, error) {
-		st, err := w.s.store.NewStaged()
-		if err != nil {
-			return "", err
-		}
-		staged[v] = st
-		return st.Path(), nil
-	})
-	if err != nil {
-		if gone, gerr := w.photoGone(ctx, p); gerr == nil && gone {
-			return nil
-		}
-		return fmt.Errorf("derive: %w", err)
-	}
-	for v, st := range staged {
-		if err := w.s.store.Commit(st, p.AlbumID, p.ID, v); err != nil {
-			return err
-		}
-	}
-	// A replacement may be smaller than the previous file: drop variants
-	// that were not regenerated (large falls back to the original).
-	for _, v := range image.Deferred {
-		if !slices.Contains(produced, v) {
-			if err := w.s.store.Remove(p.AlbumID, p.ID, v); err != nil {
-				return err
-			}
-		}
-	}
-	ok, err := w.s.db.MarkVariantsReady(ctx, p.AlbumID, p.ID, p.ContentHash)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		// Either the original was replaced underneath us (the replacing
-		// request kicked again and the next drain regenerates from the new
-		// file) or the photo was deleted, in which case Commit recreated
-		// its directory and we must take that back.
-		if gone, err := w.photoGone(ctx, p); err == nil && gone {
-			_ = w.s.store.RemovePhoto(p.AlbumID, p.ID)
-		}
-	}
-	return nil
-}
-
-// photoGone reports whether p's row no longer exists. A missing original
-// with the row still present is a real failure, not "gone".
-func (w *variantWorker) photoGone(ctx context.Context, p *db.Photo) (bool, error) {
-	_, err := w.s.db.GetPhoto(ctx, p.AlbumID, p.ID)
-	if errors.Is(err, db.ErrNotFound) {
-		return true, nil
-	}
-	return false, err
 }

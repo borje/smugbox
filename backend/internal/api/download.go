@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/bege/smugbox/backend/internal/db"
+	"github.com/bege/smugbox/backend/internal/library"
 	"github.com/bege/smugbox/backend/internal/storage"
 )
 
@@ -50,7 +51,7 @@ func (s *Server) downloadAlbum(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := sanitizeFilename(album.Name)
+	name := library.SanitizeFilename(album.Name)
 	if name == "" {
 		name = "album"
 	}

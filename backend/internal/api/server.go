@@ -10,12 +10,12 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"runtime"
 	"time"
 
 	"github.com/bege/smugbox/backend/internal/auth"
 	"github.com/bege/smugbox/backend/internal/config"
 	"github.com/bege/smugbox/backend/internal/db"
+	"github.com/bege/smugbox/backend/internal/library"
 	"github.com/bege/smugbox/backend/internal/storage"
 )
 
@@ -42,9 +42,9 @@ type Server struct {
 	rand    io.Reader
 	handler http.Handler
 
-	variants  *variantWorker // renders display variants after upload; see Run
-	zipSem    chan struct{}  // bounds concurrent zip downloads
-	deriveSem chan struct{}  // bounds libvips work inside upload requests
+	lib      *library.Library
+	variants *variantWorker // renders display variants after upload; see Run
+	zipSem   chan struct{}  // bounds concurrent zip downloads
 
 	sessions *auth.Sessions
 	limiter  *auth.RateLimiter // per (ip, slug); see unlock.go
@@ -58,16 +58,16 @@ const jsonTimeout = 30 * time.Second
 func New(d Deps) (*Server, error) {
 	s := &Server{
 		db: d.DB, store: d.Store, cfg: d.Cfg, log: d.Log, now: d.Now, rand: d.Rand,
-		zipSem:    make(chan struct{}, maxConcurrentZips),
-		deriveSem: make(chan struct{}, runtime.NumCPU()),
+		zipSem: make(chan struct{}, maxConcurrentZips),
 	}
-	s.variants = newVariantWorker(s)
 	if s.log == nil {
 		s.log = slog.Default()
 	}
 	if s.now == nil {
 		s.now = time.Now
 	}
+	s.lib = library.New(library.Deps{DB: s.db, Store: s.store, Log: s.log, Now: s.now, OnPending: func() { s.variants.kick() }})
+	s.variants = newVariantWorker(s)
 	if s.rand == nil {
 		s.rand = rand.Reader
 	}

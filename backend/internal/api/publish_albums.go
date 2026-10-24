@@ -320,17 +320,9 @@ func (s *Server) deletePhoto(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "photo_not_found", "")
 		return
 	}
-	err := s.db.DeletePhoto(r.Context(), a.ID, photoID)
-	if errors.Is(err, db.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "photo_not_found", "")
+	if err := s.lib.Remove(r.Context(), a.ID, photoID); err != nil {
+		s.libraryError(w, r, err)
 		return
-	}
-	if err != nil {
-		s.internalError(w, r, err)
-		return
-	}
-	if err := s.store.RemovePhoto(a.ID, photoID); err != nil {
-		s.log.Warn("remove photo files", "album", a.ID, "photo", photoID, "err", err)
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
