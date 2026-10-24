@@ -138,6 +138,9 @@ func (l *Library) Ingest(ctx context.Context, a *db.Album, photoID string, field
 	case err != nil:
 		return nil, false, err
 	}
+	// From here the original, the row and the pending flag change together;
+	// a client that leaves must not stop that halfway.
+	ctx = context.WithoutCancel(ctx)
 	isNew := photo == nil
 	now := l.now()
 	if isNew {

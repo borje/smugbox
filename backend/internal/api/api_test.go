@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/bege/smugbox/backend/internal/auth"
@@ -381,6 +382,17 @@ func TestUpdateAlbumPasswordVersioning(t *testing.T) {
 	}
 	if rec := e.json(http.MethodPut, "/api/publish/albums/not-a-uuid", map[string]any{"name": "x"}); rec.Code != 404 {
 		t.Fatalf("bad id: %d", rec.Code)
+	}
+}
+
+// A PUT to a missing photo is answered 404 before the body is looked at, so
+// even a file that is not a JPEG gets photo_not_found.
+func TestReplaceMissingPhotoIsNotFound(t *testing.T) {
+	e := newEnv(t)
+	a := e.createAlbum("Missing")
+	rec := e.upload(http.MethodPut, "/api/publish/albums/"+a.ID+"/photos/"+uuid.NewString(), nil, []byte("not a jpeg"), "x.jpg")
+	if rec.Code != 404 || !strings.Contains(rec.Body.String(), "photo_not_found") {
+		t.Fatalf("got %d %s", rec.Code, rec.Body.String())
 	}
 }
 

@@ -35,6 +35,15 @@ func (s *Server) replacePhoto(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "photo_not_found", "")
 		return
 	}
+	// Answer a missing photo before staging and decoding its body; the
+	// library checks again under the lock.
+	if _, err := s.db.GetPhoto(r.Context(), a.ID, photoID); errors.Is(err, db.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "photo_not_found", "")
+		return
+	} else if err != nil {
+		s.internalError(w, r, err)
+		return
+	}
 	s.ingest(w, r, a, photoID)
 }
 
