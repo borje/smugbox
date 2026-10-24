@@ -92,6 +92,14 @@ export default function Gallery({ photos }: { photos: Photo[] }) {
   // No slide title: the Captions plugin would draw it as a bar across the top.
   // The title lives in the info panel (and in the image alt) instead.
   const slides = useMemo(() => photos.map((p) => ({ ...toSlide(p), description: slideDescription(p) })), [photos])
+  // The gallery's real width: theme CSS sets it (core caps it, Nyx2 doesn't).
+  const [width, setWidth] = useState<number>()
+  const measure = useCallback((el: HTMLDivElement | null) => {
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(([entry]) => setWidth(Math.round(entry.contentRect.width)))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   // `?photo=<id>` is the lightbox state: the link Lightroom records per photo
   // opens it, opening pushes a history entry (so Back closes it), and arrowing
@@ -108,15 +116,14 @@ export default function Gallery({ photos }: { photos: Photo[] }) {
 
   // The layout is the theme's pick (theme.json "gallery"); core owns the
   // props per layout, so a library upgrade touches only this file.
-  // ponytail: no `sizes`. The theme's CSS sets the container width, which
-  // core can't know; the library default assumes a full-width container, so
-  // a theme that caps the width (Glass: 1504px) fetches one variant larger
-  // than needed on wider screens. Upgrade: a theme token for the width.
   const layout = getSite().theme.gallery
   const album = {
     photos: items,
     padding: 0,
     defaultContainerWidth: 1504,
+    // Without `sizes` the library assumes a full-viewport container and
+    // fetches a larger variant than shown on wide screens.
+    sizes: width ? { size: `${width}px` } : undefined,
     // The library rounds the container width down to one of these before
     // layout, so the column thresholds below switch at these widths.
     breakpoints: [360, 600, 900, 1200, 1536],
@@ -134,7 +141,7 @@ export default function Gallery({ photos }: { photos: Photo[] }) {
 
   return (
     <>
-      <div data-slot="gallery">
+      <div data-slot="gallery" ref={measure}>
         {layout === 'masonry' ? (
           <MasonryPhotoAlbum {...album} spacing={4} columns={(width) => (width < 640 ? 2 : width < 1000 ? 3 : 4)} />
         ) : layout === 'columns' ? (

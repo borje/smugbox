@@ -107,8 +107,12 @@
        fade-in, zoom-fade-in or none. */
     --reveal-animation: fade-in 1s ease-out backwards;
 
-    /* yet-another-react-lightbox reads its own variables. */
+    /* yet-another-react-lightbox reads its own variables. Its controls
+       default to white, so follow the palette like the backdrop does. */
     --yarl__color_backdrop: var(--lightbox-bg);
+    --yarl__color_button: color-mix(in oklch, var(--foreground) 80%, transparent);
+    --yarl__color_button_active: var(--foreground);
+    --yarl__color_button_disabled: color-mix(in oklch, var(--foreground) 40%, transparent);
   }
   .dark {
     color-scheme: dark;

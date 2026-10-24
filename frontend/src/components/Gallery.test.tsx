@@ -55,4 +55,23 @@ describe('Gallery layouts', () => {
     renderWith()
     expect(RowsPhotoAlbum).toHaveBeenCalled()
   })
+
+  it('sizes images by the measured gallery width', () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        cb: ResizeObserverCallback
+        constructor(cb: ResizeObserverCallback) {
+          this.cb = cb
+        }
+        observe() {
+          this.cb([{ contentRect: { width: 1000.4 } } as ResizeObserverEntry], this as unknown as ResizeObserver)
+        }
+        disconnect() {}
+      },
+    )
+    renderWith('rows')
+    expect(propsOf(RowsPhotoAlbum).sizes).toEqual({ size: '1000px' })
+    vi.unstubAllGlobals()
+  })
 })
