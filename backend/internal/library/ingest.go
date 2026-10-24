@@ -218,10 +218,7 @@ func (l *Library) probe(ctx context.Context, src string) (image.Info, error) {
 	if err != nil {
 		return info, err
 	}
-	_, err = image.Derive(src, info, []storage.Variant{image.Validate}, func(storage.Variant) (string, error) {
-		return thumb.Path(), nil
-	})
-	return info, err
+	return info, image.Resize(src, thumb.Path(), validate.long, validate.quality, validate.blurSigma)
 }
 
 // parseMetadata validates the optional text fields and returns a function

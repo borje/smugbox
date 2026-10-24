@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 
 	"github.com/bege/smugbox/backend/internal/db"
-	"github.com/bege/smugbox/backend/internal/image"
 	"github.com/bege/smugbox/backend/internal/storage"
 )
 
@@ -37,32 +35,31 @@ func (l *Library) Render(ctx context.Context, albumID, photoID string) error {
 			st.Abort()
 		}
 	}()
-	produced, err := l.derive(src, image.Info{Width: p.Width, Height: p.Height}, image.Deferred, func(v storage.Variant) (string, error) {
+	for _, r := range renditions {
+		if r.variant == storage.Large && !hasLarge(p) {
+			continue
+		}
 		st, err := l.store.NewStaged()
 		if err != nil {
-			return "", err
+			return err
 		}
-		staged[v] = st
-		return st.Path(), nil
-	})
-	if err != nil {
-		if gone, gerr := l.photoGone(ctx, p); gerr == nil && gone {
-			return nil
+		staged[r.variant] = st
+		if err := l.resize(src, st.Path(), r.long, r.quality, r.blurSigma); err != nil {
+			if gone, gerr := l.photoGone(ctx, p); gerr == nil && gone {
+				return nil
+			}
+			return fmt.Errorf("render %s: %w", r.variant, err)
 		}
-		return fmt.Errorf("derive: %w", err)
 	}
 	for v, st := range staged {
 		if err := l.store.Commit(st, p.AlbumID, p.ID, v); err != nil {
 			return err
 		}
 	}
-	// A replacement may be smaller than the previous file: drop variants
-	// that were not regenerated (large falls back to the original).
-	for _, v := range image.Deferred {
-		if !slices.Contains(produced, v) {
-			if err := l.store.Remove(p.AlbumID, p.ID, v); err != nil {
-				return err
-			}
+	// A replacement may be smaller than the previous original.
+	if !hasLarge(p) {
+		if err := l.store.Remove(p.AlbumID, p.ID, storage.Large); err != nil {
+			return err
 		}
 	}
 	ok, err := l.db.MarkVariantsReady(ctx, p.AlbumID, p.ID, p.ContentHash)

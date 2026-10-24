@@ -40,9 +40,9 @@ type Library struct {
 	deriveSem chan struct{} // bounds libvips work inside upload requests
 	locks     photoLocks
 
-	// derive renders the deferred variants; a seam for tests that need to
+	// resize renders one variant in Render; a seam for tests that need to
 	// hold a render in flight.
-	derive func(src string, info image.Info, want []storage.Variant, dst func(storage.Variant) (string, error)) ([]storage.Variant, error)
+	resize func(src, dst string, long, quality int, blurSigma float64) error
 }
 
 // New builds a Library. Log, Now and OnPending may be nil.
@@ -51,7 +51,7 @@ func New(d Deps) *Library {
 		db: d.DB, store: d.Store, log: d.Log, now: d.Now, onPending: d.OnPending,
 		deriveSem: make(chan struct{}, runtime.NumCPU()),
 		locks:     photoLocks{m: map[string]*photoLock{}},
-		derive:    image.Derive,
+		resize:    image.Resize,
 	}
 	if l.log == nil {
 		l.log = slog.Default()

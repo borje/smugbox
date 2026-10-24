@@ -12,7 +12,7 @@ are fixed; do not re-open them without asking. Code, comments and docs are in En
     `Server.Run` is the background variant worker; `photos.variants_ready` is its
     queue, and visitors never see a photo until it is set.
   - `internal/library` — the photo library: `Stage`/`Ingest` (new, replaced or
-    metadata-only photo), `Render` (worker), `Remove`. A per-photo lock keeps the
+    metadata-only photo), `Render` (worker), `Open`, `Remove`; owns the variant table. A per-photo lock keeps the
     original, the variants and `variants_ready` in agreement. Terms in `GLOSSARY.md`.
   - `internal/db` — SQLite via `modernc.org/sqlite`, goose migrations embedded from
     `internal/db/migrations`. Single connection (`SetMaxOpenConns(1)`).

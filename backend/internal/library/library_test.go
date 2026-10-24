@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -104,11 +105,14 @@ func TestReplaceWaitsForRenderInFlight(t *testing.T) {
 	}
 
 	rendered, release := make(chan struct{}), make(chan struct{})
-	e.lib.derive = func(src string, info image.Info, want []storage.Variant, dst func(storage.Variant) (string, error)) ([]storage.Variant, error) {
-		produced, err := image.Derive(src, info, want, dst)
-		close(rendered)
-		<-release
-		return produced, err
+	var once sync.Once
+	e.lib.resize = func(src, dst string, long, quality int, blurSigma float64) error {
+		err := image.Resize(src, dst, long, quality, blurSigma)
+		once.Do(func() {
+			close(rendered)
+			<-release
+		})
+		return err
 	}
 	renderDone := make(chan error, 1)
 	go func() { renderDone <- e.lib.Render(context.Background(), e.album.ID, p.ID) }()
@@ -136,7 +140,7 @@ func TestReplaceWaitsForRenderInFlight(t *testing.T) {
 	if got.VariantsReady || got.Width != 600 || got.ContentHash == p.ContentHash {
 		t.Fatalf("after replace: ready=%v width=%d hash changed=%v, want pending 600-wide new original", got.VariantsReady, got.Width, got.ContentHash != p.ContentHash)
 	}
-	e.lib.derive = image.Derive
+	e.lib.resize = image.Resize
 	if err := e.lib.Render(context.Background(), e.album.ID, p.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -226,5 +230,74 @@ func TestHeadCaptureAcrossShortWrites(t *testing.T) {
 				t.Fatalf("head = %x (len %d), want %x", up.head, up.headLen, tc.want)
 			}
 		})
+	}
+}
+
+func (e *env) render(id string) {
+	e.t.Helper()
+	if err := e.lib.Render(context.Background(), e.album.ID, id); err != nil {
+		e.t.Fatal(err)
+	}
+}
+
+// open opens variant v the way a visitor gets it and returns which file
+// served it and its dimensions.
+func (e *env) open(id string, v storage.Variant) (storage.Variant, int, int) {
+	e.t.Helper()
+	f, served, err := e.lib.Open(e.photo(id), v)
+	if err != nil {
+		e.t.Fatalf("open %s: %v", v, err)
+	}
+	f.Close()
+	info, err := image.Probe(f.Name())
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	return served, info.Width, info.Height
+}
+
+func TestRenderProducesEveryVariant(t *testing.T) {
+	e := newEnv(t)
+	p, err := e.ingest("", 3000, 2000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.render(p.ID)
+	want := map[storage.Variant][2]int{
+		storage.Large:  {2560, 1707},
+		storage.Medium: {1600, 1067},
+		storage.Small:  {800, 533},
+		storage.Thumb:  {400, 267},
+		storage.Blur:   {40, 27},
+	}
+	for v, dims := range want {
+		served, w, h := e.open(p.ID, v)
+		if served != v || w != dims[0] || h != dims[1] {
+			t.Errorf("%s: served %s %dx%d, want %s %dx%d", v, served, w, h, v, dims[0], dims[1])
+		}
+	}
+}
+
+// A photo no bigger than large has no large variant; the original serves
+// it, also after a replace shrank a photo that had one.
+func TestLargeFallsBackToOriginal(t *testing.T) {
+	e := newEnv(t)
+	p, err := e.ingest("", 3000, 2000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.render(p.ID)
+	if _, err := e.ingest(p.ID, 1200, 800); err != nil {
+		t.Fatal(err)
+	}
+	e.render(p.ID)
+	if served, w, h := e.open(p.ID, storage.Large); served != storage.Original || w != 1200 || h != 800 {
+		t.Fatalf("large served %s %dx%d, want original 1200x800", served, w, h)
+	}
+	if _, err := e.store.Stat(e.album.ID, p.ID, storage.Large); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("stale large.jpg left behind: %v", err)
+	}
+	if served, w, _ := e.open(p.ID, storage.Medium); served != storage.Medium || w != 1200 {
+		t.Fatalf("medium served %s %d wide, want medium 1200 (never upscaled)", served, w)
 	}
 }

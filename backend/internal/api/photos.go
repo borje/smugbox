@@ -64,15 +64,9 @@ func (s *Server) getPhotoVariant(w http.ResponseWriter, r *http.Request) {
 	s.serveVariant(w, r, album, photo, variant, r.URL.Query().Get("download") == "1", cache)
 }
 
-// serveVariant streams one stored file with ETag and caching headers. The
-// large variant falls back to the original when it was not generated.
+// serveVariant streams one stored file with ETag and caching headers.
 func (s *Server) serveVariant(w http.ResponseWriter, r *http.Request, album *db.Album, photo *db.Photo, v storage.Variant, download bool, cacheControl string) {
-	if v == storage.Large {
-		if _, err := s.store.Stat(album.ID, photo.ID, v); errors.Is(err, fs.ErrNotExist) {
-			v = storage.Original
-		}
-	}
-	f, err := s.store.Open(album.ID, photo.ID, v)
+	f, v, err := s.lib.Open(photo, v)
 	if errors.Is(err, fs.ErrNotExist) {
 		s.log.Error("photo file missing on disk", "album", album.ID, "photo", photo.ID, "variant", v)
 		writeError(w, http.StatusNotFound, "file_missing", "")
