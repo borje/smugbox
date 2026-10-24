@@ -23,6 +23,7 @@ type Photo struct {
 	TakenAt     string          // as delivered by Lightroom, no time zone
 	Exif        json.RawMessage // JSON object or nil
 	ContentHash string          // sha256 hex of the original file
+	DurationMs  int             // length of a video, 0 for a still image
 	SortOrder   int
 	// VariantsReady is false while the display variants are still being
 	// generated in the background. Visitors never see such a photo.
@@ -37,7 +38,7 @@ type PhotoRef struct {
 	ID      string
 }
 
-const photoCols = `id, album_id, lr_photo_uuid, filename, mime_type, size_bytes, width, height, COALESCE(title, ''), COALESCE(caption, ''), COALESCE(keywords, '[]'), COALESCE(taken_at, ''), COALESCE(exif, ''), COALESCE(content_hash, ''), sort_order, variants_ready, created_at, updated_at`
+const photoCols = `id, album_id, lr_photo_uuid, filename, mime_type, size_bytes, width, height, COALESCE(title, ''), COALESCE(caption, ''), COALESCE(keywords, '[]'), COALESCE(taken_at, ''), COALESCE(exif, ''), COALESCE(content_hash, ''), COALESCE(duration_ms, 0), sort_order, variants_ready, created_at, updated_at`
 
 // photoOrder is the default display order.
 const photoOrder = ` ORDER BY sort_order, taken_at, filename`
@@ -47,7 +48,7 @@ func scanPhoto(r rowScanner) (*Photo, error) {
 	var created, updated, keywords, exif string
 	var ready int
 	if err := r.Scan(&p.ID, &p.AlbumID, &p.LrPhotoUUID, &p.Filename, &p.MimeType, &p.SizeBytes, &p.Width, &p.Height,
-		&p.Title, &p.Caption, &keywords, &p.TakenAt, &exif, &p.ContentHash, &p.SortOrder, &ready, &created, &updated); err != nil {
+		&p.Title, &p.Caption, &keywords, &p.TakenAt, &exif, &p.ContentHash, &p.DurationMs, &p.SortOrder, &ready, &created, &updated); err != nil {
 		return nil, err
 	}
 	p.VariantsReady = ready != 0
@@ -83,9 +84,9 @@ func (p *Photo) exifText() any {
 // InsertPhoto adds a photo. Returns ErrPhotoExists if (album, lr_photo_uuid)
 // is already present.
 func (d *DB) InsertPhoto(ctx context.Context, p *Photo) error {
-	_, err := d.ExecContext(ctx, `INSERT INTO photos (id, album_id, lr_photo_uuid, filename, mime_type, size_bytes, width, height, title, caption, keywords, taken_at, exif, content_hash, sort_order, variants_ready, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), ?, NULLIF(?, ''), ?, NULLIF(?, ''), ?, ?, ?, ?)`,
-		p.ID, p.AlbumID, p.LrPhotoUUID, p.Filename, p.MimeType, p.SizeBytes, p.Width, p.Height, p.Title, p.Caption, p.keywordsJSON(), p.TakenAt, p.exifText(), p.ContentHash, p.SortOrder, boolToInt(p.VariantsReady), formatTime(p.CreatedAt), formatTime(p.UpdatedAt))
+	_, err := d.ExecContext(ctx, `INSERT INTO photos (id, album_id, lr_photo_uuid, filename, mime_type, size_bytes, width, height, title, caption, keywords, taken_at, exif, content_hash, duration_ms, sort_order, variants_ready, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), ?, NULLIF(?, ''), ?, NULLIF(?, ''), NULLIF(?, 0), ?, ?, ?, ?)`,
+		p.ID, p.AlbumID, p.LrPhotoUUID, p.Filename, p.MimeType, p.SizeBytes, p.Width, p.Height, p.Title, p.Caption, p.keywordsJSON(), p.TakenAt, p.exifText(), p.ContentHash, p.DurationMs, p.SortOrder, boolToInt(p.VariantsReady), formatTime(p.CreatedAt), formatTime(p.UpdatedAt))
 	if isUniqueViolation(err) {
 		return ErrPhotoExists
 	}
@@ -99,8 +100,8 @@ func (d *DB) InsertPhoto(ctx context.Context, p *Photo) error {
 // ID, album, lr_photo_uuid, sort_order, variants_ready and created_at are
 // left untouched.
 func (d *DB) UpdatePhoto(ctx context.Context, p *Photo) error {
-	res, err := d.ExecContext(ctx, `UPDATE photos SET filename = ?, mime_type = ?, size_bytes = ?, width = ?, height = ?, title = NULLIF(?, ''), caption = NULLIF(?, ''), keywords = ?, taken_at = NULLIF(?, ''), exif = ?, content_hash = NULLIF(?, ''), updated_at = ? WHERE id = ? AND album_id = ?`,
-		p.Filename, p.MimeType, p.SizeBytes, p.Width, p.Height, p.Title, p.Caption, p.keywordsJSON(), p.TakenAt, p.exifText(), p.ContentHash, formatTime(p.UpdatedAt), p.ID, p.AlbumID)
+	res, err := d.ExecContext(ctx, `UPDATE photos SET filename = ?, mime_type = ?, size_bytes = ?, width = ?, height = ?, title = NULLIF(?, ''), caption = NULLIF(?, ''), keywords = ?, taken_at = NULLIF(?, ''), exif = ?, content_hash = NULLIF(?, ''), duration_ms = NULLIF(?, 0), updated_at = ? WHERE id = ? AND album_id = ?`,
+		p.Filename, p.MimeType, p.SizeBytes, p.Width, p.Height, p.Title, p.Caption, p.keywordsJSON(), p.TakenAt, p.exifText(), p.ContentHash, p.DurationMs, formatTime(p.UpdatedAt), p.ID, p.AlbumID)
 	if err != nil {
 		return fmt.Errorf("update photo: %w", err)
 	}

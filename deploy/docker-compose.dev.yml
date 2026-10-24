@@ -47,7 +47,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:5173}
       SITE_TITLE: ${SITE_TITLE:-Photo Gallery (dev)}
-      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-100}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-2000}
     volumes:
       - gallery-dev-data:/data
 

@@ -17,6 +17,7 @@ import (
 	"github.com/bege/smugbox/backend/internal/db"
 	"github.com/bege/smugbox/backend/internal/image"
 	"github.com/bege/smugbox/backend/internal/storage"
+	"github.com/bege/smugbox/backend/internal/video"
 )
 
 const (
@@ -31,7 +32,7 @@ type Upload struct {
 	staged   *storage.Staged
 	size     int64
 	hash     string
-	head     [3]byte
+	head     [12]byte // enough to sniff a JPEG or an MP4/QuickTime ftyp box
 	headLen  int
 	filename string // as the client named it
 }
@@ -97,20 +98,33 @@ func (l *Library) Ingest(ctx context.Context, a *db.Album, photoID string, field
 
 	// Check the file before taking the lock: probing is the slow part and
 	// touches nothing but the staged copy.
-	var info image.Info
+	var info video.Info
+	var mime string
 	if up != nil {
-		if up.size == 0 || !image.IsJPEG(up.head[:up.headLen]) {
-			return nil, false, clientErr("not_jpeg", "file must be a JPEG image")
+		head := up.head[:up.headLen]
+		videoMime, isVideo := video.Sniff(head)
+		if up.size == 0 || !isVideo && !image.IsJPEG(head) {
+			return nil, false, clientErr("unsupported_media_type", "file must be a JPEG image or an MP4/QuickTime video")
 		}
 		if err := up.staged.Sync(); err != nil {
 			return nil, false, err
 		}
-		if info, err = l.probe(ctx, up.staged.Path()); err != nil {
+		code := "invalid_image"
+		if isVideo {
+			mime, code = videoMime, "invalid_video"
+			info, err = video.Probe(ctx, up.staged.Path())
+		} else {
+			mime = "image/jpeg"
+			var ii image.Info
+			ii, err = l.probe(ctx, up.staged.Path())
+			info = video.Info{Width: ii.Width, Height: ii.Height}
+		}
+		if err != nil {
 			if ctx.Err() != nil {
 				return nil, false, ctx.Err()
 			}
 			l.log.Warn("probe upload", "album", a.ID, "photo", photoID, "lr_photo_uuid", lrUUID, "err", err)
-			return nil, false, clientErr("invalid_image", err.Error())
+			return nil, false, clientErr(code, err.Error())
 		}
 	}
 
@@ -147,16 +161,19 @@ func (l *Library) Ingest(ctx context.Context, a *db.Album, photoID string, field
 		if up == nil {
 			return nil, false, clientErr("missing_file", "")
 		}
-		photo = &db.Photo{ID: id, AlbumID: a.ID, LrPhotoUUID: lrUUID, MimeType: "image/jpeg", CreatedAt: now}
+		photo = &db.Photo{ID: id, AlbumID: a.ID, LrPhotoUUID: lrUUID, CreatedAt: now}
 	}
 	photo.UpdatedAt = now
 	applyMetadata(photo)
+	var staleMime string // the replaced original's type
 
 	if up != nil {
 		photo.Width, photo.Height = info.Width, info.Height
 		photo.SizeBytes = up.size
 		photo.ContentHash = up.hash
-		photo.MimeType = "image/jpeg"
+		photo.DurationMs = info.DurationMs
+		staleMime = photo.MimeType
+		photo.MimeType = mime
 		if photo.Filename == "" || fields["filename"] == "" {
 			if fn := SanitizeFilename(up.filename); fn != "" {
 				photo.Filename = fn
@@ -169,12 +186,12 @@ func (l *Library) Ingest(ctx context.Context, a *db.Album, photoID string, field
 				return nil, false, err
 			}
 		}
-		if err := l.store.Commit(up.staged, a.ID, photo.ID, storage.Original); err != nil {
+		if err := l.store.Commit(up.staged, a.ID, photo.ID, storage.Original, mime); err != nil {
 			return nil, false, err
 		}
 	}
 	if photo.Filename == "" {
-		photo.Filename = photo.ID + ".jpg"
+		photo.Filename = photo.ID + path.Ext(storage.Original.Filename(photo.MimeType))
 	}
 
 	if isNew {
@@ -189,6 +206,12 @@ func (l *Library) Ingest(ctx context.Context, a *db.Album, photoID string, field
 		return nil, false, err
 	}
 	if up != nil {
+		// A different kind of original has a different file name.
+		if !isNew && storage.Original.Filename(staleMime) != storage.Original.Filename(mime) {
+			if err := l.store.Remove(a.ID, photo.ID, storage.Original, staleMime); err != nil {
+				l.log.Warn("remove replaced original", "album", a.ID, "photo", photo.ID, "err", err)
+			}
+		}
 		l.onPending()
 	}
 	return photo, isNew, nil

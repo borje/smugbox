@@ -36,6 +36,10 @@ export interface PhotoSizes {
 export interface Photo {
   id: string
   filename: string
+  /** Of the original: `image/jpeg`, or `video/mp4` / `video/quicktime`. Display variants are always JPEG. */
+  mime_type: string
+  /** Videos only. */
+  duration_ms?: number
   width: number
   height: number
   title?: string

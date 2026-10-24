@@ -83,7 +83,11 @@ func (s *Server) serveVariant(w http.ResponseWriter, r *http.Request, album *db.
 		return
 	}
 	h := w.Header()
-	h.Set("Content-Type", "image/jpeg")
+	ctype := "image/jpeg"
+	if v == storage.Original {
+		ctype = photo.MimeType
+	}
+	h.Set("Content-Type", ctype)
 	h.Set("ETag", fmt.Sprintf(`"%s-%s"`, photo.ContentHash, v))
 	h.Set("Cache-Control", cacheControl)
 	if download {

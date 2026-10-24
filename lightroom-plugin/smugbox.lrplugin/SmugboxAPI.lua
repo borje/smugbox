@@ -19,7 +19,10 @@ local SmugboxAPI = {}
 SmugboxAPI.__index = SmugboxAPI
 
 local TIMEOUT = 30 -- seconds, per connection phase
-local UPLOAD_TIMEOUT = 600
+local UPLOAD_TIMEOUT = 3600 -- videos are large
+
+-- The backend sniffs the bytes; the part's type is informational.
+local CONTENT_TYPES = { jpg = "image/jpeg", jpeg = "image/jpeg", mp4 = "video/mp4", mov = "video/quicktime" }
 
 -- Seconds to wait before each retry. Long enough to sit out a container
 -- redeploy, during which the reverse proxy answers for a backend that is not
@@ -217,7 +220,7 @@ function SmugboxAPI:uploadPhoto(albumId, filePath, fields, photoId)
 		name = "file",
 		filePath = filePath,
 		fileName = fields.filename or LrPathUtils.leafName(filePath),
-		contentType = "image/jpeg",
+		contentType = CONTENT_TYPES[string.lower(LrPathUtils.extension(filePath))] or "application/octet-stream",
 	})
 	log:tracef("POST %s (multipart, %s)", url, tostring(fields.filename))
 	local ok, result, status, data = sendWithRetry(self, function()

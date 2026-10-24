@@ -1,18 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ImgHTMLAttributes } from 'react'
 import { useSearchParams } from 'react-router'
 import { ColumnsPhotoAlbum, MasonryPhotoAlbum, RowsPhotoAlbum } from 'react-photo-album'
-import Lightbox, { IconButton, createIcon, useLightboxState, type ControllerRef } from 'yet-another-react-lightbox'
+import Lightbox, {
+  IconButton,
+  createIcon,
+  useLightboxState,
+  type ControllerRef,
+  type SlideshowRef,
+} from 'yet-another-react-lightbox'
 import Captions from 'yet-another-react-lightbox/plugins/captions'
 import Counter from 'yet-another-react-lightbox/plugins/counter'
 import Download from 'yet-another-react-lightbox/plugins/download'
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen'
 import Slideshow from 'yet-another-react-lightbox/plugins/slideshow'
 import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails'
+import Video from 'yet-another-react-lightbox/plugins/video'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import type { Photo } from '@/api/types'
 import FadeImage from '@/components/FadeImage'
 import { InfoButton, InfoPanel } from '@/components/PhotoInfo'
-import { toGalleryPhoto, toSlide } from '@/lib/photos'
+import { formatDuration, isVideo, toGalleryPhoto, toSlide, type GalleryItem } from '@/lib/photos'
 import { getSite } from '@/lib/site'
 
 /** Only the caption is overlaid on the photo; date and camera data are in the info panel. */
@@ -70,6 +77,21 @@ function ShareButton({ photos }: { photos: Photo[] }) {
   )
 }
 
+// Play icon and length over a video's poster tile.
+function VideoBadge({ ms }: { ms: number }) {
+  return (
+    <span
+      data-slot="video-badge"
+      className="pointer-events-none absolute right-2 bottom-2 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-xs font-medium text-white"
+    >
+      <svg viewBox="0 0 24 24" className="size-3 fill-current" aria-hidden="true">
+        <path d="M8 5v14l11-7z" />
+      </svg>
+      {ms > 0 ? formatDuration(ms) : <span className="sr-only">Video</span>}
+    </span>
+  )
+}
+
 export default function Gallery({ photos }: { photos: Photo[] }) {
   const [searchParams, setSearchParams] = useSearchParams()
   // The info panel stays open while arrowing through slides; it only closes
@@ -82,6 +104,7 @@ export default function Gallery({ photos }: { photos: Photo[] }) {
   // is scoped to. Focus on an ancestor doesn't bubble keydown into a
   // descendant's handler, so arrow keys stop working unless we refocus.
   const controllerRef = useRef<ControllerRef>(null)
+  const slideshowRef = useRef<SlideshowRef>(null)
   useEffect(() => {
     const onFullscreenChange = () => {
       if (document.fullscreenElement) controllerRef.current?.focus()
@@ -128,7 +151,11 @@ export default function Gallery({ photos }: { photos: Photo[] }) {
     // layout, so the column thresholds below switch at these widths.
     breakpoints: [360, 600, 900, 1200, 1536],
     onClick: ({ index: i }: { index: number }) => setPhoto(photos[i].id, false),
-    render: { image: (props: ImgHTMLAttributes<HTMLImageElement>) => <FadeImage {...props} /> },
+    render: {
+      image: (props: ImgHTMLAttributes<HTMLImageElement>) => <FadeImage {...props} />,
+      extras: (_: object, { photo }: { photo: GalleryItem }) =>
+        photo.videoMs !== undefined && <VideoBadge ms={photo.videoMs} />,
+    },
   }
 
   if (photos.length === 0) {
@@ -167,9 +194,11 @@ export default function Gallery({ photos }: { photos: Photo[] }) {
         on={{
           view: ({ index: i }) => {
             if (photos[i] && photos[i].id !== photoParam) setPhoto(photos[i].id, true)
+            // Videos don't autoplay, so the slideshow would skip past them.
+            if (photos[i] && isVideo(photos[i])) slideshowRef.current?.pause()
           },
         }}
-        plugins={[Captions, Counter, Fullscreen, Slideshow, Thumbnails, Zoom, Download]}
+        plugins={[Captions, Counter, Fullscreen, Slideshow, Thumbnails, Video, Zoom, Download]}
         toolbar={{
           buttons: [
             <InfoButton key="info" open={infoOpen} onToggle={toggleInfo} />,
@@ -182,7 +211,8 @@ export default function Gallery({ photos }: { photos: Photo[] }) {
         // shrinks beside (or above) the panel instead of being covered.
         styles={{ container: { '--yarl__sb_info': infoOpen ? 1 : 0 } }}
         captions={{ descriptionTextAlign: 'center', descriptionMaxLines: 4 }}
-        slideshow={{ delay: 4000 }}
+        slideshow={{ ref: slideshowRef, delay: 4000 }}
+        video={{ controls: true, playsInline: true, preload: 'metadata' }}
         thumbnails={{ width: 96, height: 64, border: 0, gap: 8, padding: 0, imageFit: 'cover' }}
         zoom={{ maxZoomPixelRatio: 2 }}
         controller={{ ref: controllerRef, closeOnBackdropClick: true }}

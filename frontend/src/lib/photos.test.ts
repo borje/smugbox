@@ -1,5 +1,5 @@
 import { photo } from '@/test/fixtures'
-import { buildSrcSet, photoDetails, toSlide } from './photos'
+import { buildSrcSet, formatDuration, photoDetails, toGalleryPhoto, toSlide } from './photos'
 import { formatDateRange, formatDateTime, parseTakenAt, photoCount } from './format'
 
 describe('buildSrcSet', () => {
@@ -41,7 +41,30 @@ describe('toSlide', () => {
   it('points the download plugin at the original with the Lightroom filename', () => {
     const slide = toSlide(photo('a', 'x', { filename: 'IMG_0001.jpg' }))
     expect(slide.download).toEqual({ url: '/api/albums/a/photos/x/original?download=1', filename: 'IMG_0001.jpg' })
-    expect(slide.src).toBe('/api/albums/a/photos/x/large')
+    expect(slide).toMatchObject({ src: '/api/albums/a/photos/x/large' })
+  })
+  it('plays a video from its original, with the large variant as poster', () => {
+    const slide = toSlide(photo('a', 'v', { filename: 'CLIP.mp4', mime_type: 'video/mp4', duration_ms: 32000 }))
+    expect(slide).toMatchObject({
+      type: 'video',
+      poster: '/api/albums/a/photos/v/large',
+      sources: [{ src: '/api/albums/a/photos/v/original', type: 'video/mp4' }],
+      download: { url: '/api/albums/a/photos/v/original?download=1', filename: 'CLIP.mp4' },
+    })
+  })
+})
+
+describe('video', () => {
+  it('marks only videos, with their length', () => {
+    expect(toGalleryPhoto(photo('a', 'x')).videoMs).toBeUndefined()
+    expect(toGalleryPhoto(photo('a', 'v', { mime_type: 'video/quicktime', duration_ms: 5000 })).videoMs).toBe(5000)
+    expect(toGalleryPhoto(photo('a', 'v', { mime_type: 'video/mp4' })).videoMs).toBe(0)
+  })
+  it('formats durations', () => {
+    expect(formatDuration(0)).toBe('0:00')
+    expect(formatDuration(32400)).toBe('0:32')
+    expect(formatDuration(125000)).toBe('2:05')
+    expect(formatDuration(3_725_000)).toBe('1:02:05')
   })
 })
 

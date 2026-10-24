@@ -39,10 +39,12 @@ provider.exportPresetFields = {
 	{ key = "LR_removeLocationMetadata", default = true },
 }
 
-provider.hideSections = { "exportLocation", "video", "postProcessing" }
+-- The video section stays visible: choose H.264 there for browser
+-- playback; the backend stores and serves what it gets (MP4 or QuickTime).
+provider.hideSections = { "exportLocation", "postProcessing" }
 provider.allowFileFormats = { "JPEG" }
 provider.allowColorSpaces = { "sRGB" }
-provider.canExportVideo = false
+provider.canExportVideo = true
 
 provider.titleForPublishedCollection = "Album"
 provider.titleForPublishedCollectionSet = "Album set"

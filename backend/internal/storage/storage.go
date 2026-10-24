@@ -1,6 +1,7 @@
 // Package storage lays out photo files on local disk.
 //
-// Layout: <root>/photos/<album uuid>/<photo uuid>/<variant>.jpg. Paths are
+// Layout: <root>/photos/<album uuid>/<photo uuid>/<variant>.jpg, except a
+// video original, which keeps its container's extension. Paths are
 // built only from validated UUIDs and a whitelist of variant names, so no
 // user-controlled string ever becomes part of a path. Files are written to
 // <root>/incoming first and renamed into place, which is atomic on one
@@ -40,8 +41,18 @@ func ParseVariant(s string) (Variant, bool) {
 	return v, variants[v]
 }
 
-// Filename is the on-disk name of the variant.
-func (v Variant) Filename() string { return string(v) + ".jpg" }
+// originalExt is the extension of an original by MIME type; display
+// variants are always JPEG.
+var originalExt = map[string]string{"video/mp4": ".mp4", "video/quicktime": ".mov"}
+
+// Filename is the on-disk name of the variant of a photo whose original has
+// the given MIME type.
+func (v Variant) Filename(mime string) string {
+	if ext, ok := originalExt[mime]; ok && v == Original {
+		return string(v) + ext
+	}
+	return string(v) + ".jpg"
+}
 
 // ErrInvalidID is returned when an id is not a UUID or a variant is unknown.
 var ErrInvalidID = errors.New("invalid id or variant")
@@ -93,7 +104,7 @@ func (s *Store) PhotoDir(albumID, photoID string) (string, error) {
 }
 
 // Path returns the file path of a variant.
-func (s *Store) Path(albumID, photoID string, v Variant) (string, error) {
+func (s *Store) Path(albumID, photoID string, v Variant, mime string) (string, error) {
 	if !variants[v] {
 		return "", ErrInvalidID
 	}
@@ -101,13 +112,13 @@ func (s *Store) Path(albumID, photoID string, v Variant) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, v.Filename()), nil
+	return filepath.Join(dir, v.Filename(mime)), nil
 }
 
 // Stat returns file info for a variant, or an error satisfying
 // errors.Is(err, fs.ErrNotExist) when it is absent.
-func (s *Store) Stat(albumID, photoID string, v Variant) (os.FileInfo, error) {
-	p, err := s.Path(albumID, photoID, v)
+func (s *Store) Stat(albumID, photoID string, v Variant, mime string) (os.FileInfo, error) {
+	p, err := s.Path(albumID, photoID, v, mime)
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +126,8 @@ func (s *Store) Stat(albumID, photoID string, v Variant) (os.FileInfo, error) {
 }
 
 // Open opens a variant for reading.
-func (s *Store) Open(albumID, photoID string, v Variant) (*os.File, error) {
-	p, err := s.Path(albumID, photoID, v)
+func (s *Store) Open(albumID, photoID string, v Variant, mime string) (*os.File, error) {
+	p, err := s.Path(albumID, photoID, v, mime)
 	if err != nil {
 		return nil, err
 	}
@@ -177,11 +188,11 @@ func (st *Staged) Abort() {
 
 // Commit moves a staged file into place as the given variant, replacing any
 // previous file atomically.
-func (s *Store) Commit(st *Staged, albumID, photoID string, v Variant) error {
+func (s *Store) Commit(st *Staged, albumID, photoID string, v Variant, mime string) error {
 	if st.done {
 		return errors.New("staged file already committed or aborted")
 	}
-	dst, err := s.Path(albumID, photoID, v)
+	dst, err := s.Path(albumID, photoID, v, mime)
 	if err != nil {
 		return err
 	}
@@ -199,8 +210,8 @@ func (s *Store) Commit(st *Staged, albumID, photoID string, v Variant) error {
 }
 
 // WriteFile stores r as the given variant in one step.
-func (s *Store) WriteFile(albumID, photoID string, v Variant, r io.Reader) (int64, error) {
-	if _, err := s.Path(albumID, photoID, v); err != nil {
+func (s *Store) WriteFile(albumID, photoID string, v Variant, mime string, r io.Reader) (int64, error) {
+	if _, err := s.Path(albumID, photoID, v, mime); err != nil {
 		return 0, err
 	}
 	st, err := s.NewStaged()
@@ -212,7 +223,7 @@ func (s *Store) WriteFile(albumID, photoID string, v Variant, r io.Reader) (int6
 	if err != nil {
 		return n, err
 	}
-	return n, s.Commit(st, albumID, photoID, v)
+	return n, s.Commit(st, albumID, photoID, v, mime)
 }
 
 // RemovePhoto deletes a photo directory and the album directory if it became empty.
@@ -365,8 +376,8 @@ func (s *Store) StaleIncoming(now time.Time, maxAge time.Duration) ([]string, er
 }
 
 // Remove deletes one variant file if present.
-func (s *Store) Remove(albumID, photoID string, v Variant) error {
-	p, err := s.Path(albumID, photoID, v)
+func (s *Store) Remove(albumID, photoID string, v Variant, mime string) error {
+	p, err := s.Path(albumID, photoID, v, mime)
 	if err != nil {
 		return err
 	}

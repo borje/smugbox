@@ -7,6 +7,7 @@ import (
 
 	"github.com/bege/smugbox/backend/internal/db"
 	"github.com/bege/smugbox/backend/internal/storage"
+	"github.com/bege/smugbox/backend/internal/video"
 )
 
 // Render renders the display variants of a pending photo from its stored
@@ -25,7 +26,7 @@ func (l *Library) Render(ctx context.Context, albumID, photoID string) error {
 	if p.VariantsReady {
 		return nil
 	}
-	src, err := l.store.Path(p.AlbumID, p.ID, storage.Original)
+	src, err := l.store.Path(p.AlbumID, p.ID, storage.Original, p.MimeType)
 	if err != nil {
 		return err
 	}
@@ -35,6 +36,25 @@ func (l *Library) Render(ctx context.Context, albumID, photoID string) error {
 			st.Abort()
 		}
 	}()
+	if isVideo(p) {
+		// The variants of a video are rendered from its poster frame,
+		// which is not kept.
+		poster, err := l.store.NewStaged()
+		if err != nil {
+			return err
+		}
+		defer poster.Abort()
+		if err := poster.Sync(); err != nil {
+			return err
+		}
+		if err := video.Poster(ctx, src, poster.Path(), p.DurationMs); err != nil {
+			if gone, gerr := l.photoGone(ctx, p); gerr == nil && gone {
+				return nil
+			}
+			return fmt.Errorf("render poster: %w", err)
+		}
+		src = poster.Path()
+	}
 	for _, r := range renditions {
 		if r.variant == storage.Large && !hasLarge(p) {
 			continue
@@ -52,13 +72,13 @@ func (l *Library) Render(ctx context.Context, albumID, photoID string) error {
 		}
 	}
 	for v, st := range staged {
-		if err := l.store.Commit(st, p.AlbumID, p.ID, v); err != nil {
+		if err := l.store.Commit(st, p.AlbumID, p.ID, v, p.MimeType); err != nil {
 			return err
 		}
 	}
 	// A replacement may be smaller than the previous original.
 	if !hasLarge(p) {
-		if err := l.store.Remove(p.AlbumID, p.ID, storage.Large); err != nil {
+		if err := l.store.Remove(p.AlbumID, p.ID, storage.Large, p.MimeType); err != nil {
 			return err
 		}
 	}

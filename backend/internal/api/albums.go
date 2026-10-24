@@ -47,6 +47,8 @@ type photoSizes struct {
 type photoJSON struct {
 	ID       string          `json:"id"`
 	Filename string          `json:"filename"`
+	MimeType string          `json:"mime_type"`
+	Duration int             `json:"duration_ms,omitempty"` // videos only
 	Width    int             `json:"width"`
 	Height   int             `json:"height"`
 	Title    string          `json:"title,omitempty"`
@@ -100,7 +102,7 @@ func albumItems(sums []*db.AlbumSummary) []albumListItem {
 func toPhotoJSON(slug string, p *db.Photo) photoJSON {
 	base := apiAlbumPath(slug) + "/photos/" + p.ID + "/"
 	return photoJSON{
-		ID: p.ID, Filename: p.Filename, Width: p.Width, Height: p.Height,
+		ID: p.ID, Filename: p.Filename, MimeType: p.MimeType, Duration: p.DurationMs, Width: p.Width, Height: p.Height,
 		Title: p.Title, Caption: p.Caption, Keywords: p.Keywords, TakenAt: p.TakenAt, Exif: p.Exif,
 		URLs: photoURLs{
 			Thumb:    base + string(storage.Thumb),
