@@ -107,9 +107,10 @@
   }
 }
 
-/* Lightbox surface and round controls. With the default tokens the controls
-   are plain; a theme can make them frosted (Glass) through --control-bg,
-   --surface-border and --surface-blur. */
+/* Lightbox surface and round controls. With the default tokens the toolbar
+   buttons are transparent with a 1px --surface-border outline; a theme can
+   make them frosted (Glass) through --control-bg, --surface-border and
+   --surface-blur. */
 .yarl__container {
   background: var(--lightbox-bg);
   backdrop-filter: blur(var(--surface-blur));

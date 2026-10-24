@@ -51,6 +51,8 @@ export default function FadeImage({ className, style, ...props }: ImgHTMLAttribu
       {...props}
       ref={ref}
       onLoad={() => setLoaded(true)}
+      // Reveal a failed image too, so its broken-image icon and alt text show.
+      onError={() => setLoaded(true)}
       style={shown ? { ...style, animationDelay: `${delay}ms` } : style}
       className={cn(className, shown ? 'animate-reveal' : 'opacity-0')}
     />
