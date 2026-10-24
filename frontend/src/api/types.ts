@@ -90,3 +90,16 @@ export interface FolderDetail {
   folders: FolderSummary[]
   albums: AlbumSummary[]
 }
+
+/** A photo found by search, with the album it opens in. */
+export interface SearchPhoto extends Photo {
+  album_slug: string
+}
+
+export interface SearchResult {
+  /** Path to the folder searched beneath, root first; absent for a site-wide search. */
+  breadcrumb?: Crumb[]
+  folders: FolderSummary[]
+  albums: AlbumSummary[]
+  photos: SearchPhoto[]
+}

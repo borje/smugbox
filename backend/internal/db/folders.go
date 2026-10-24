@@ -197,9 +197,15 @@ func scanFolderSummary(r rowScanner) (*FolderSummary, error) {
 // photos only: a photo whose variants are still being generated must not
 // order the folder or hand it a cover album that would answer no_cover.
 func (d *DB) ListChildFolders(ctx context.Context, parentID string) ([]*FolderSummary, error) {
+	return d.folderSummaries(ctx, `SELECT id FROM folders WHERE parent_id IS ?`, nullIfEmpty(parentID))
+}
+
+// folderSummaries summarises the folders whose ids the roots query selects,
+// dropping those with no listed album in their subtree.
+func (d *DB) folderSummaries(ctx context.Context, roots string, args ...any) ([]*FolderSummary, error) {
 	rows, err := d.QueryContext(ctx, `
 		WITH RECURSIVE sub(root_id, folder_id) AS (
-			SELECT id, id FROM folders WHERE parent_id IS ?
+			SELECT id, id FROM folders WHERE id IN (`+roots+`)
 		UNION ALL
 			SELECT s.root_id, f.id FROM folders f JOIN sub s ON f.parent_id = s.folder_id
 		), av AS (
@@ -216,10 +222,10 @@ func (d *DB) ListChildFolders(ctx context.Context, parentID string) ([]*FolderSu
 		                  ORDER BY taken_to DESC, created_at DESC LIMIT 1), ''),
 		       COALESCE((SELECT MAX(taken_to) FROM av WHERE av.root_id = f.id), '') AS newest
 		  FROM folders f
-		 WHERE f.parent_id IS ? AND EXISTS (SELECT 1 FROM av WHERE av.root_id = f.id)
-		 ORDER BY newest DESC, f.name`, nullIfEmpty(parentID), nullIfEmpty(parentID))
+		 WHERE EXISTS (SELECT 1 FROM av WHERE av.root_id = f.id)
+		 ORDER BY newest DESC, f.name`, args...)
 	if err != nil {
-		return nil, fmt.Errorf("list child folders: %w", err)
+		return nil, fmt.Errorf("folder summaries: %w", err)
 	}
 	defer rows.Close()
 	var out []*FolderSummary

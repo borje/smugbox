@@ -28,7 +28,8 @@ export default function AlbumPage() {
   const cover = data?.cover_photo_id ? data.photos.find((p) => p.id === data.cover_photo_id) : undefined
   return (
     <>
-      <Breadcrumb crumbs={trail?.breadcrumb} current={trail?.name} />
+      {/* Search the album's folder: one album is small enough to scroll. */}
+      <Breadcrumb crumbs={trail?.breadcrumb} current={trail?.name} scope={trail?.breadcrumb?.at(-1)} />
       {isPending ? (
         <div className="space-y-6" aria-busy="true" aria-label="Loading album">
           <Skeleton className="aspect-[4/3] max-h-[70vh] min-h-[280px] w-full rounded-media sm:aspect-[2/1] lg:aspect-[21/9]" />

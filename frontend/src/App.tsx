@@ -3,6 +3,7 @@ import AlbumListPage from '@/pages/AlbumListPage'
 import AlbumPage from '@/pages/AlbumPage'
 import FolderPage from '@/pages/FolderPage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import SearchPage from '@/pages/SearchPage'
 
 // No header: each page starts with the breadcrumb, which is the top bar.
 function Layout() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route index element={<AlbumListPage />} />
         <Route path="a/:slug" element={<AlbumPage />} />
         <Route path="f/:slug" element={<FolderPage />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

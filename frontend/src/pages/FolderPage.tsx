@@ -19,7 +19,7 @@ export default function FolderPage() {
   }
   return (
     <>
-      <Breadcrumb crumbs={data?.breadcrumb} current={data?.name} />
+      <Breadcrumb crumbs={data?.breadcrumb} current={data?.name} scope={data} />
       {isPending ? (
         <ChildGridSkeleton label="Loading folder" />
       ) : isError ? (
