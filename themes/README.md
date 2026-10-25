@@ -159,7 +159,7 @@ Title typography has no tokens; style the title slots.
 |---|---|
 | `page` | The `<main>` page container; set its width and padding here |
 | `breadcrumb` | The top bar (`<nav>`), first on every page and in every state. Its first `breadcrumb-item` is the site name; on the home page that item holds a `breadcrumb-page` with shadcn's `font-normal`, so set a font weight on `[data-slot="breadcrumb-item"]:first-child > *` too |
-| `search` | Search form at the right end of the top bar; holds an `input`. It searches the current folder (on an album page, the album's folder), or the whole site at the top level |
+| `search` | Search form at the right end of the top bar: a magnifier `button`, then an `input` shown on hover or focus (below `sm`, over the whole bar). It searches the current folder (on an album page, the album's folder), or the whole site at the top level |
 | `search-scope` | "Search everywhere" link on a folder-limited search page |
 | `search-tabs` | Albums / Photos switch on the search page; the active link has `aria-current="page"` |
 | `child-grid` | Grid of folder and album cards (also while loading, and photo hits on the search page, which use the `album-card` slots); override `grid-template-columns` for fixed columns |

@@ -13,12 +13,15 @@ describe('SearchPage', () => {
     expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveValue('iceland')
   })
 
-  it('expands from a magnifier button on small screens and closes again', async () => {
+  it('opens the field from the magnifier button and closes it again', async () => {
     renderApp('/')
     await userEvent.click(await screen.findByRole('button', { name: 'Search' }))
-    expect(screen.queryByRole('button', { name: 'Search' })).toBeNull()
+    expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveFocus()
     await userEvent.click(screen.getByRole('button', { name: 'Close search' }))
-    expect(screen.getByRole('button', { name: 'Search' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Close search' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('button', { name: 'Close search' })).toBeNull()
   })
 
   it('switches between result types', async () => {
