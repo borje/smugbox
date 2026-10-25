@@ -32,7 +32,7 @@ export default function Breadcrumb({
   const links =
     current === undefined ? [] : [{ name: title, to: '/' }, ...crumbs.map((c) => ({ name: c.name, to: `/f/${c.slug}` }))]
   return (
-    <Root aria-label="Breadcrumb" className="flex items-center gap-4 rounded-pill">
+    <Root aria-label="Breadcrumb" className="relative flex items-center gap-4 rounded-pill">
       <BreadcrumbList>
         {links.map((item) => (
           <Fragment key={item.to}>

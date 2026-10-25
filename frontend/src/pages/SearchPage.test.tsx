@@ -12,6 +12,14 @@ describe('SearchPage', () => {
     expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveValue('iceland')
   })
 
+  it('expands from a magnifier button on small screens and closes again', async () => {
+    renderApp('/')
+    await userEvent.click(await screen.findByRole('button', { name: 'Search' }))
+    expect(screen.queryByRole('button', { name: 'Search' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Close search' }))
+    expect(screen.getByRole('button', { name: 'Search' })).toBeInTheDocument()
+  })
+
   it('switches between result types', async () => {
     renderApp('/search?q=iceland')
     const tabs = await screen.findByRole('navigation', { name: 'Result types' })
