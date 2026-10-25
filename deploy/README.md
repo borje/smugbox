@@ -22,10 +22,13 @@ than an hour that no database row references.
 TLS and hostnames are handled by your proxy (Traefik in the reference setup).
 Two things matter for this service:
 
-- **Timeouts.** Album zip downloads stream for as long as the album is large.
-  Raise the proxy's response/idle timeouts well above the default (Traefik:
-  `--entrypoints.websecure.transport.respondingTimeouts.writeTimeout=0` or a
-  generous value, and no request body limit below `MAX_UPLOAD_MB`).
+- **Timeouts.** Album zip downloads stream for as long as the album is large,
+  and a video upload (up to `MAX_UPLOAD_MB`, 2 GB by default) takes minutes on
+  a slow uplink. Raise the proxy's response/idle timeouts well above the
+  default, its read timeout too, and set no request body limit below
+  `MAX_UPLOAD_MB`. Traefik v3 cuts request bodies after 60 s by default:
+  `--entrypoints.websecure.transport.respondingTimeouts.readTimeout=0` and
+  `...respondingTimeouts.writeTimeout=0` (or generous values).
 - **Client IPs.** Set `TRUSTED_PROXY_CIDR` to the proxy's network so the
   unlock rate limiter uses the visitor's IP from `X-Forwarded-For` rather than
   the proxy's. The compose file defaults it to the RFC 1918 ranges; narrow it

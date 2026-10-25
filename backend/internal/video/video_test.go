@@ -2,6 +2,7 @@ package video
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -46,6 +47,15 @@ func TestSniff(t *testing.T) {
 	if _, ok := Sniff([]byte{0xFF, 0xD8, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0}); ok {
 		t.Error("jpeg sniffed as video")
 	}
+	for _, h := range []string{"\x00\x00\x00\x1cftypavif", "\x00\x00\x00\x18ftypheic", "\x00\x00\x00\x18ftypmif1", "\x00\x00\x00\x20ftypM4A "} {
+		if m, ok := Sniff([]byte(h)); ok {
+			t.Errorf("%q sniffed as %s", h[8:], m)
+		}
+	}
+	// QuickTime without an ftyp box.
+	if m, ok := Sniff([]byte("\x00\x00\x00\x08wide\x00\x00\x00\x00")); !ok || m != "video/quicktime" {
+		t.Errorf("wide atom: %q %v", m, ok)
+	}
 }
 
 func TestProbe(t *testing.T) {
@@ -67,10 +77,25 @@ func TestProbe(t *testing.T) {
 		t.Errorf("rotated: %+v %v", info, err)
 	}
 
+	// Anamorphic: 1440x1080 stored, 4:3 pixels, shown as 1920x1080.
+	wide := filepath.Join(t.TempDir(), "wide.mp4")
+	if out, err := exec.Command("ffmpeg", "-v", "error", "-i", fixture(t, "hdv.mp4", 144, 108), "-vf", "setsar=4/3", wide).CombinedOutput(); err != nil {
+		t.Fatalf("ffmpeg: %v: %s", err, out)
+	}
+	if info, err := Probe(ctx, wide); err != nil || info.Width != 192 || info.Height != 108 {
+		t.Errorf("anamorphic: %+v %v", info, err)
+	}
+
 	junk := filepath.Join(t.TempDir(), "junk.mp4")
 	os.WriteFile(junk, []byte("\x00\x00\x00\x18ftypisomnot really a video"), 0o644)
-	if _, err := Probe(ctx, junk); err == nil {
-		t.Error("junk probed fine")
+	if _, err := Probe(ctx, junk); !errors.Is(err, ErrInvalid) {
+		t.Errorf("junk: %v, want ErrInvalid", err)
+	}
+
+	// A missing tool is the server's fault, not the file's.
+	t.Setenv("PATH", "")
+	if _, err := Probe(ctx, plain); err == nil || errors.Is(err, ErrInvalid) {
+		t.Errorf("no ffprobe: %v, want a non-ErrInvalid error", err)
 	}
 }
 
@@ -87,5 +112,29 @@ func TestPoster(t *testing.T) {
 	// No duration known: the first frame.
 	if err := Poster(context.Background(), src, dst, 0); err != nil {
 		t.Fatal(err)
+	}
+
+	// The poster has square pixels, at the size Probe reports.
+	wide := filepath.Join(t.TempDir(), "wide.mp4")
+	if out, err := exec.Command("ffmpeg", "-v", "error", "-i", src, "-vf", "setsar=4/3", wide).CombinedOutput(); err != nil {
+		t.Fatalf("ffmpeg: %v: %s", err, out)
+	}
+	if err := Poster(context.Background(), wide, dst, 2000); err != nil {
+		t.Fatal(err)
+	}
+	if info, err := Probe(context.Background(), dst); err != nil || info.Width != 426 || info.Height != 240 {
+		t.Errorf("anamorphic poster: %+v %v", info, err)
+	}
+}
+
+func TestCapped(t *testing.T) {
+	c := capped{max: 4}
+	for _, w := range []string{"ab", "cde", "fg"} {
+		if n, err := c.Write([]byte(w)); n != len(w) || err != nil {
+			t.Fatalf("Write(%q) = %d, %v", w, n, err)
+		}
+	}
+	if c.String() != "abcd" {
+		t.Errorf("kept %q", c.String())
 	}
 }

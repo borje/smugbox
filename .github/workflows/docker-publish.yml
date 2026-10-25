@@ -29,7 +29,8 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
-      - run: apt-get update && apt-get install -y --no-install-recommends libvips-dev pkg-config
+      # ffmpeg: the video tests skip without it.
+      - run: apt-get update && apt-get install -y --no-install-recommends libvips-dev pkg-config ffmpeg
       - run: go build ./...
       - run: go vet ./...
       - run: go test ./...

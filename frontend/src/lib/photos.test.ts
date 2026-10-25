@@ -52,6 +52,13 @@ describe('toSlide', () => {
       download: { url: '/api/albums/a/photos/v/original?download=1', filename: 'CLIP.mp4' },
     })
   })
+  it('offers a QuickTime video as MP4, with the thumb variant in the strip', () => {
+    const slide = toSlide(photo('a', 'v', { mime_type: 'video/quicktime' }))
+    expect(slide).toMatchObject({
+      thumbnail: '/api/albums/a/photos/v/thumb',
+      sources: [{ src: '/api/albums/a/photos/v/original', type: 'video/mp4' }],
+    })
+  })
 })
 
 describe('video', () => {

@@ -40,8 +40,9 @@ fråga användaren först:
 - **Nedladdning är alltid på** för alla som kan se albumet: enskild bild (originalet)
   och hela albumet som zip. Ingen per-album-inställning.
 - Pluginet laddar upp **den JPEG Lightroom exporterar, i full storlek** ("original").
-  Backend genererar mindre varianter. Inte RAW. Video är **utanför scope** i v1
-  (`canExportVideo = false`).
+  Backend genererar mindre varianter. Inte RAW. Video (MP4/QuickTime) **ingår**
+  (`canExportVideo = true`): originalet sparas orört och varianterna renderas från en
+  stillbild ur filmen; se `video-support-implementation-plan.md`.
 - Lightroom-pluginet ska byggas mot **Adobes Lightroom Classic SDK (Lua)**, med
   `lrc-immich-plugin` (github.com/bmachek/lrc-immich-plugin) som referensimplementation
   för hur en publish service-callback-kedja ska se ut. Kopiera inte kod rakt av
@@ -409,7 +410,7 @@ $DATA_DIR/
 ### 5.2 Krav på pluginet
 
 Registrera sig som **Publish Service** i `Info.lua` (`LrExportServiceProvider` med
-`supportsIncrementalPublish = true`). Sätt `canExportVideo = false`,
+`supportsIncrementalPublish = true`). Sätt `canExportVideo = true`,
 `allowFileFormats = { "JPEG" }`, `allowColorSpaces = { "sRGB" }`. **Dölj inte**
 sektionen för bildstorlek — användaren styr exportstorleken själv, med förvalet
 "Ändra inte storlek" (full storlek) eftersom backend gör derivaten. Dölj övriga
@@ -471,7 +472,6 @@ Callbacks som måste implementeras:
 
 ### 5.3 Ej i scope för v1
 - Nedladdning/import tillbaka till Lightroom (som `lrc-immich-plugin` också har).
-- Video.
 - Välja omslagsbild från Lightroom (backend tar första bilden i sorteringen; kan sättas
   via `PUT .../albums/{id}` senare).
 - Lösenord på mappar/samlings-set (skydd är fortfarande bara per album).
