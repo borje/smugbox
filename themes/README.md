@@ -4,9 +4,9 @@ A theme is a skin for the photo-album app: a `theme.json`, a `theme.css` and
 assets (fonts, images). It ships no JavaScript and no HTML; the markup is the
 same for every theme. Pick one with `SITE_THEME=<id>` and restart.
 
-This folder holds the themes in the repository. **Noir** is the built-in theme
-(the only one in the Docker image); **Glass**, **Nyx**, **Nyx2** and
-**Nyx2noir** are user themes.
+This folder holds the themes in the repository. All of them
+(**Noir**, the default, **Glass**, **Nyx**, **Nyx2** and **Nyx2noir**) are
+built into the Docker image; install your own as a user theme.
 
 ## Installing a theme
 
@@ -173,6 +173,7 @@ Title typography has no tokens; style the title slots.
 | `album-hero-title`, `album-hero-meta` | Album title, photo count and dates |
 | `album-download` | "Download album" button (replaces `button` on that element) |
 | `gallery` | Wrapper around the photo layout |
+| `video-badge` | Play icon and duration over a video in the gallery |
 | `photo-info` | Lightbox info panel |
 | `password-gate` | Password form of a locked album |
 | `empty-state` | "No albums / no photos yet" text |

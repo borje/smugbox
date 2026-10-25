@@ -25,13 +25,14 @@ The design document with all decisions is
    service, optionally give it a password, and click *Publish*. Editing the
    collection's settings afterwards lets you pick a cover photo; otherwise the
    first photo in the collection's sort order is used.
-2. The plugin exports full-size JPEGs and uploads each one with its title,
-   caption, keywords, capture time and camera data. Re-publishing an edited
-   photo replaces it in place; removing a photo or the collection removes it
-   on the server.
+2. The plugin exports full-size JPEGs (videos as MP4/MOV) and uploads each
+   one with its title, caption, keywords, capture time and camera data.
+   Re-publishing an edited photo replaces it in place; removing a photo or
+   the collection removes it on the server.
 3. The server stores the original untouched and generates `large`, `medium`,
    `small`, `thumb` and a tiny blurred placeholder, all upright, sRGB and
-   stripped of metadata except the colour profile.
+   stripped of metadata except the colour profile. A video gets the same
+   variants from a poster frame.
 4. Visitors browse `https://your-host/`. Public albums open directly;
    protected albums show a password prompt and stay unlocked for 24 hours in
    that browser. The album list only ever shows blurred covers for locked
@@ -76,7 +77,8 @@ upgraded binary's `admin` only when you are ready to upgrade `serve` too.
 
 ## Development
 
-Requirements: Go 1.26, `libvips-dev` and `pkg-config`, Node 22.
+Requirements: Go 1.26, `libvips-dev`, `pkg-config` and `ffmpeg` (video tests
+skip without it), Node 22.
 
 ```
 # backend on :8080
@@ -113,7 +115,7 @@ cd tools/loadtest
 | `PUBLIC_BASE_URL` | `http://localhost:8080` | Public origin used in links the plugin records. |
 | `SITE_TITLE` | `Smugbox` | Title shown in the browser tab and as the first item of the top bar. |
 | `SITE_THEME` | `noir` | Theme to use: a zip or folder name in `DATA_DIR/themes` or `BUILTIN_THEMES_DIR` (see [themes/README.md](themes/README.md)). Restart to change. |
-| `BUILTIN_THEMES_DIR` | unset | Themes shipped with the server; the image sets `/srv/themes` (Noir). |
+| `BUILTIN_THEMES_DIR` | unset | Themes shipped with the server; the image sets `/srv/themes` (every theme in `themes/`). |
 | `DATA_DIR` | `./data` | SQLite database and photo files. |
 | `FRONTEND_DIR` | unset | Built frontend to serve; unset gives 404 for non-API paths. |
 | `LISTEN_ADDR` | `:8080` | Listen address. |
@@ -130,7 +132,8 @@ cd tools/loadtest
   Bearer API key required. Used by the plugin.
 - `GET /api/albums`, `GET /api/albums/{slug}`, `GET .../cover`,
   `GET .../photos/{id}/{variant}[?download=1]`, `GET .../download`,
-  `POST .../unlock`, `GET /api/folders/{slug}`. Used by the frontend.
+  `POST .../unlock`, `GET /api/folders/{slug}`, `GET /api/search`. Used by the
+  frontend.
 - `GET /api/healthz`.
 
 Errors are JSON: `{"error": "snake_case_code", "message": "optional detail"}`.

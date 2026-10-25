@@ -17,6 +17,22 @@ Smugbox). Other admin commands: `list-albums`, `list-api-keys`,
 `gc` can run while the container is serving; it only touches files older
 than an hour that no database row references.
 
+## Themes
+
+Every theme in `themes/` is built into the image; pick one with `SITE_THEME`
+in `.env` (default `noir`) and restart. For your own theme, copy its folder or
+zip into the volume's `themes/` directory, set `SITE_THEME` to its id (the
+folder or zip name) and restart:
+
+```
+docker compose exec smugbox mkdir -p /data/themes
+docker compose cp mytheme.zip smugbox:/data/themes/
+```
+
+A user theme with a built-in theme's id replaces it. An invalid or missing
+theme stops the server; the log says why. The theme contract is in
+`themes/README.md`.
+
 ## Reverse proxy
 
 TLS and hostnames are handled by your proxy (Traefik in the reference setup).
@@ -60,7 +76,7 @@ kept in the separate `gallery-dev-data` volume.
 
 ```
 cd deploy && docker compose -f docker-compose.dev.yml up --build   # http://localhost:5173
-docker compose -f docker-compose.dev.yml exec backend gallery admin create-api-key --label dev
+docker compose -f docker-compose.dev.yml exec backend smugbox admin create-api-key --label dev
 ```
 
 `node_modules` inside the container lives in its own volume so it never

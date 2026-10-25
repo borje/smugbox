@@ -33,7 +33,8 @@ are fixed; do not re-open them without asking. Code, comments and docs are in En
 - `frontend/` — Vite + React + TypeScript (Tailwind v4, shadcn/ui, react-photo-album,
   yet-another-react-lightbox, TanStack Query, Vitest + MSW).
 - `themes/` — site themes (`theme.json` + `theme.css` + fonts); the contract is in
-  `themes/README.md`. Noir is the built-in one; the others are user themes.
+  `themes/README.md`. All are built into the image (Noir is the default); user
+  themes go in `<DATA_DIR>/themes`.
   `frontend/theme-dev-plugin.ts` injects `themes/$SITE_THEME` into `vite dev`.
 - `lightroom-plugin/smugbox.lrplugin/` — Lightroom Classic publish service (Lua).
 - `deploy/` — Dockerfile (build from repo root), docker-compose, backup script.

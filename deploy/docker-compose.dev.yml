@@ -8,7 +8,7 @@
 # image is only rebuilt when you pass --build. Create an API key for the
 # Lightroom plug-in with:
 #
-#   docker compose -f docker-compose.dev.yml exec backend gallery admin create-api-key --label dev
+#   docker compose -f docker-compose.dev.yml exec backend smugbox admin create-api-key --label dev
 #
 # Backend data lives in the gallery-dev-data volume, separate from production.
 services:
@@ -22,7 +22,8 @@ services:
     environment:
       API_PROXY_TARGET: http://backend:8080
       # The dev server injects this theme from ../themes (frontend/theme-dev-plugin.ts).
-      SITE_THEME: ${SITE_THEME:-noir}
+      #SITE_THEME: ${SITE_THEME:-nyx2noir}
+      SITE_THEME: nyx2noir
       SITE_TITLE: ${SITE_TITLE:-Photo Gallery (dev)}
     volumes:
       - ../frontend:/app
@@ -46,6 +47,7 @@ services:
       LOG_FORMAT: text
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:5173}
+      SITE_THEME: nyx2noir
       SITE_TITLE: ${SITE_TITLE:-Photo Gallery (dev)}
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-2000}
     volumes:

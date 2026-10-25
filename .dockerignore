@@ -4,3 +4,4 @@ frontend/dist
 backend/data
 data
 *.md
+themes/README.md
