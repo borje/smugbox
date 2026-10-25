@@ -7,6 +7,7 @@ describe('SearchPage', () => {
     renderApp('/')
     await userEvent.type(await screen.findByRole('searchbox', { name: 'Search' }), 'iceland{Enter}')
     expect(screen.getByTestId('location')).toHaveTextContent('/search?q=iceland')
+    await userEvent.click(await screen.findByRole('link', { name: 'Photos (1)' }))
     const photo = await screen.findByRole('link', { name: 'Glacier' })
     expect(photo).toHaveAttribute('href', '/a/iceland?photo=i1')
     expect(screen.getByRole('searchbox', { name: 'Search' })).toHaveValue('iceland')
@@ -23,17 +24,17 @@ describe('SearchPage', () => {
   it('switches between result types', async () => {
     renderApp('/search?q=iceland')
     const tabs = await screen.findByRole('navigation', { name: 'Result types' })
-    expect(within(tabs).getByRole('link', { name: 'Photos (1)' })).toHaveAttribute('aria-current', 'page')
-    await userEvent.click(within(tabs).getByRole('link', { name: 'Albums (1)' }))
-    expect(await screen.findByRole('link', { name: 'Iceland' })).toHaveAttribute('href', '/a/iceland')
+    expect(within(tabs).getByRole('link', { name: 'Albums (1)' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Iceland' })).toHaveAttribute('href', '/a/iceland')
     expect(screen.queryByRole('link', { name: 'Glacier' })).toBeNull()
+    await userEvent.click(within(tabs).getByRole('link', { name: 'Photos (1)' }))
+    expect(await screen.findByRole('link', { name: 'Glacier' })).toBeInTheDocument()
   })
 
   it('opens the first tab with hits', async () => {
-    renderApp('/search?q=travel')
+    renderApp('/search?q=glacier')
     const tabs = await screen.findByRole('navigation', { name: 'Result types' })
-    expect(within(tabs).getByRole('link', { name: 'Folders (1)' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.getByRole('link', { name: /Travel/ })).toHaveAttribute('href', '/f/travel')
+    expect(within(tabs).getByRole('link', { name: 'Photos (1)' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('searches the current folder, with a way out to the whole site', async () => {
@@ -50,7 +51,7 @@ describe('SearchPage', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/search?q=iceland&folder=travel&tab=albums')
     await userEvent.click(screen.getByRole('link', { name: 'Search everywhere' }))
     expect(screen.getByTestId('location')).toHaveTextContent(/^\/search\?q=iceland$/)
-    expect(await screen.findByRole('link', { name: 'Glacier' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Albums (1)' })).toHaveAttribute('aria-current', 'page')
     expect(screen.queryByRole('link', { name: 'Search everywhere' })).toBeNull()
   })
 
@@ -71,6 +72,6 @@ describe('SearchPage', () => {
 
   it('says when nothing matches', async () => {
     renderApp('/search?q=zzz')
-    expect(await screen.findByText('No photos match “zzz”.')).toBeInTheDocument()
+    expect(await screen.findByText('No albums match “zzz”.')).toBeInTheDocument()
   })
 })

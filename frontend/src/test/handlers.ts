@@ -25,16 +25,16 @@ export const handlers = [
     const q = searchParams.get('q')
     const folder = searchParams.get('folder')
     if (folder === 'travel')
-      return HttpResponse.json({ breadcrumb: [{ slug: 'travel', name: 'Travel' }], folders: [], albums: [icelandAlbum], photos: [] })
+      return HttpResponse.json({ breadcrumb: [{ slug: 'travel', name: 'Travel' }], albums: [icelandAlbum], photos: [] })
     if (folder) return HttpResponse.json({ error: 'folder_not_found' }, { status: 404 })
     if (q === 'iceland')
       return HttpResponse.json({
-        folders: [travelFolder],
         albums: [icelandAlbum],
         photos: [{ ...photo('iceland', 'i1', { title: 'Glacier' }), album_slug: 'iceland' }],
       })
-    if (q === 'travel') return HttpResponse.json({ folders: [travelFolder], albums: [], photos: [] })
-    return HttpResponse.json({ folders: [], albums: [], photos: [] })
+    if (q === 'glacier')
+      return HttpResponse.json({ albums: [], photos: [{ ...photo('iceland', 'i1', { title: 'Glacier' }), album_slug: 'iceland' }] })
+    return HttpResponse.json({ albums: [], photos: [] })
   }),
 
   http.get('/api/folders/:slug', ({ params }) => {

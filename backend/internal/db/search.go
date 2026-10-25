@@ -17,9 +17,8 @@ type PhotoHit struct {
 
 // SearchResult is what a visitor may see that matches a search.
 type SearchResult struct {
-	Folders []*FolderSummary
-	Albums  []*AlbumSummary
-	Photos  []PhotoHit
+	Albums []*AlbumSummary
+	Photos []PhotoHit
 }
 
 // ftsQuery turns free text into an FTS5 query: every word must match as a
@@ -54,8 +53,7 @@ type appendScanner struct {
 
 func (s appendScanner) Scan(dest ...any) error { return s.rowScanner.Scan(append(dest, s.extra...)...) }
 
-// Search finds what a visitor may see: folders with a listed album beneath
-// them, listed albums (locked ones too, as in the listings) and ready photos
+// Search finds what a visitor may see: listed albums (locked ones too, as in the listings) and ready photos
 // of listed, unlocked albums. Photos of locked albums are never searched, so
 // their titles and captions cannot leak. A non-empty folderID limits the
 // search to what lies beneath that folder.
@@ -72,13 +70,6 @@ func (d *DB) Search(ctx context.Context, q, folderID string) (*SearchResult, err
 		within = func(col string) string { return " AND " + col + " IN " + subtree }
 		scope = []any{folderID}
 	}
-	var err error
-	res.Folders, err = d.folderSummaries(ctx, `SELECT id FROM search_fts WHERE search_fts MATCH ? AND kind = 'folder'`+
-		within("id")+` AND id IS NOT ?`, append(append([]any{match}, scope...), nullIfEmpty(folderID))...)
-	if err != nil {
-		return nil, err
-	}
-
 	rows, err := d.QueryContext(ctx, summarySelect+` WHERE a.is_listed = 1
 		AND a.id IN (SELECT id FROM search_fts WHERE search_fts MATCH ? AND kind = 'album')`+within("a.folder_id")+`
 		ORDER BY taken_to DESC, a.created_at DESC`, append([]any{match}, scope...)...)

@@ -53,8 +53,8 @@ func TestSearchFindsOnlyWhatVisitorsMaySee(t *testing.T) {
 	if res := e.search("dusk"); len(res.Albums) != 1 || res.Albums[0].Slug != "malmo-harbour" {
 		t.Fatalf("album by description: %+v", res.Albums)
 	}
-	if res := e.search("nordic"); len(res.Folders) != 1 || res.Folders[0].Slug != "nordic-trips" {
-		t.Fatalf("folder by name: %+v", res.Folders)
+	if res := e.search("nordic"); res.Folders != nil || len(res.Albums) != 0 {
+		t.Fatalf("folder names are not searched: %+v", res)
 	}
 
 	// The locked album is found by name (it is listed) but its photos are
@@ -123,18 +123,8 @@ func TestSearchWithinFolder(t *testing.T) {
 	if rec.Code != 200 || len(res.Breadcrumb) != 1 || res.Breadcrumb[0].Name != "Travel" {
 		t.Fatalf("breadcrumb: %d %+v", rec.Code, res.Breadcrumb)
 	}
-	if len(res.Photos) != 1 || res.Photos[0].ID != in || len(res.Albums) != 1 || res.Albums[0].Slug != "beach-day" ||
-		len(res.Folders) != 1 || res.Folders[0].Slug != "nordic-beaches" {
+	if len(res.Photos) != 1 || res.Photos[0].ID != in || len(res.Albums) != 1 || res.Albums[0].Slug != "beach-day" {
 		t.Fatalf("within travel: %+v", res.searchBody)
-	}
-	// The scope folder itself is not a hit.
-	if res := e.search("travel"); len(res.Folders) != 1 {
-		t.Fatalf("unscoped folder hit: %+v", res.Folders)
-	}
-	rec = e.get("/api/search?q=travel&folder=travel")
-	decode(t, rec, &res)
-	if len(res.Folders) != 0 {
-		t.Fatalf("scope folder found itself: %+v", res.Folders)
 	}
 	rec = e.get("/api/search?q=beach&folder=nordic-beaches")
 	decode(t, rec, &res)

@@ -9,10 +9,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { formatDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
+// Album hits first: a search for an album name often also matches many
+// photos (by keyword), which would otherwise bury it behind a tab.
 const tabs = [
-  { id: 'photos', label: 'Photos' },
   { id: 'albums', label: 'Albums' },
-  { id: 'folders', label: 'Folders' },
+  { id: 'photos', label: 'Photos' },
 ] as const
 type Tab = (typeof tabs)[number]['id']
 
@@ -45,14 +46,14 @@ export default function SearchPage() {
   // Without an explicit tab, open the first one that has hits.
   const tab: Tab = tabs.some((t) => t.id === tabParam)
     ? (tabParam as Tab)
-    : (tabs.find((t) => data && data[t.id].length > 0)?.id ?? 'photos')
+    : (tabs.find((t) => data && data[t.id].length > 0)?.id ?? tabs[0].id)
 
   return (
     <>
       <Breadcrumb crumbs={data?.breadcrumb} current="Search" scope={scope} />
       {q === '' ? (
         <p data-slot="empty-state" className="py-24 text-center text-muted-foreground">
-          Search photo titles, captions and keywords, and album and folder names.
+          Search photo titles, captions and keywords, and album names.
         </p>
       ) : isPending ? (
         <ChildGridSkeleton label="Searching" />
@@ -129,9 +130,9 @@ export default function SearchPage() {
             )
           ) : (
             <ChildGrid
-              folders={tab === 'folders' ? data.folders : []}
-              albums={tab === 'albums' ? data.albums : []}
-              emptyMessage={`No ${tab} match “${q}”.`}
+              folders={[]}
+              albums={data.albums}
+              emptyMessage={`No albums match “${q}”.`}
             />
           )}
         </>

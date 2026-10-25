@@ -47,7 +47,6 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request) {
 	for _, h := range res.Photos {
 		photos = append(photos, searchPhoto{toPhotoJSON(h.AlbumSlug, h.Photo), h.AlbumSlug})
 	}
-	out["folders"] = folderItems(res.Folders)
 	out["albums"] = albumItems(res.Albums)
 	out["photos"] = photos
 	w.Header().Set("Cache-Control", "no-cache")

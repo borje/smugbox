@@ -103,7 +103,6 @@ export interface SearchPhoto extends Photo {
 export interface SearchResult {
   /** Path to the folder searched beneath, root first; absent for a site-wide search. */
   breadcrumb?: Crumb[]
-  folders: FolderSummary[]
   albums: AlbumSummary[]
   photos: SearchPhoto[]
 }
