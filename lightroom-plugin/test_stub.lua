@@ -32,7 +32,10 @@ stub.dialogs = {}
 
 stub.sdk = {
 	LrHttp = {},
-	LrPathUtils = { leafName = function(p) return p end },
+	LrPathUtils = {
+		leafName = function(p) return p end,
+		extension = function(p) return p:match("%.([^./]+)$") or "" end,
+	},
 	LrTasks = {
 		pcall = taskPcall,
 		sleep = function(n) table.insert(stub.slept, n) end,
