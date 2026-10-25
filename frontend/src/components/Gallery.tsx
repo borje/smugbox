@@ -22,9 +22,12 @@ import { InfoButton, InfoPanel } from '@/components/PhotoInfo'
 import { formatDuration, isVideo, toGalleryPhoto, toSlide, type GalleryItem } from '@/lib/photos'
 import { getSite } from '@/lib/site'
 
-/** Only the caption is overlaid on the photo; date and camera data are in the info panel. */
+/**
+ * Only the caption is overlaid on the photo; date and camera data are in the info panel.
+ * A video gets no overlay: it would cover the native controls bar. Its caption is in the info panel.
+ */
 function slideDescription(photo: Photo) {
-  return photo.caption || undefined
+  return isVideo(photo) ? undefined : photo.caption || undefined
 }
 
 /** Link to the current page with `?photo=<id>`, i.e. what the lightbox itself syncs to. */

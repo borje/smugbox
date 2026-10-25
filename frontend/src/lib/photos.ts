@@ -72,9 +72,13 @@ export function toSlide(photo: Photo): GallerySlide {
     return {
       type: 'video',
       poster: photo.urls.large,
+      // The Thumbnails strip draws a video from this, else from the 2560px poster.
+      thumbnail: photo.urls.thumb,
       width: photo.width,
       height: photo.height,
-      sources: [{ src: photo.urls.original, type: photo.mime_type }],
+      // Always video/mp4: Chrome and Firefox skip a "video/quicktime" source,
+      // yet play the H.264/HEVC a .mov holds; its container is MP4's.
+      sources: [{ src: photo.urls.original, type: 'video/mp4' }],
       download,
     }
   }

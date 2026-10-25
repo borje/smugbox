@@ -112,7 +112,11 @@ func (l *Library) Ingest(ctx context.Context, a *db.Album, photoID string, field
 		code := "invalid_image"
 		if isVideo {
 			mime, code = videoMime, "invalid_video"
-			info, err = video.Probe(ctx, up.staged.Path())
+			info, err = l.probeVideo(ctx, up.staged.Path())
+			if err != nil && !errors.Is(err, video.ErrInvalid) {
+				// ffprobe or ffmpeg could not run: the server's fault.
+				return nil, false, err
+			}
 		} else {
 			mime = "image/jpeg"
 			var ii image.Info
@@ -245,6 +249,33 @@ func (l *Library) probe(ctx context.Context, src string) (image.Info, error) {
 		return info, err
 	}
 	return info, image.Resize(src, thumb.Path(), validate.long, validate.quality, validate.blurSigma)
+}
+
+// probeVideo reads the video at src and extracts a throwaway poster from
+// it, as the worker will: a file whose headers ffprobe accepts can still
+// fail to decode, and that must be rejected in the request. It holds
+// deriveSem like probe.
+func (l *Library) probeVideo(ctx context.Context, src string) (video.Info, error) {
+	select {
+	case l.deriveSem <- struct{}{}:
+	case <-ctx.Done():
+		return video.Info{}, ctx.Err()
+	}
+	defer func() { <-l.deriveSem }()
+
+	info, err := video.Probe(ctx, src)
+	if err != nil {
+		return info, err
+	}
+	poster, err := l.store.NewStaged()
+	if err != nil {
+		return info, err
+	}
+	defer poster.Abort()
+	if err := poster.Sync(); err != nil {
+		return info, err
+	}
+	return info, video.Poster(ctx, src, poster.Path(), info.DurationMs)
 }
 
 // parseMetadata validates the optional text fields and returns a function

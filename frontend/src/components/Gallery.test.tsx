@@ -1,5 +1,5 @@
 import { ColumnsPhotoAlbum, MasonryPhotoAlbum, RowsPhotoAlbum } from 'react-photo-album'
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import Gallery from '@/components/Gallery'
 import { renderAt, setSite } from '@/test/render'
 import { photo, summerDetail } from '@/test/fixtures'
@@ -88,12 +88,14 @@ describe('Gallery layouts', () => {
 
 describe('Gallery lightbox', () => {
   it('plays a video slide from its original', () => {
-    const clip = photo('summer-2026', 'v1', { filename: 'CLIP.mp4', mime_type: 'video/mp4', duration_ms: 32000 })
+    const clip = photo('summer-2026', 'v1', { filename: 'CLIP.mp4', mime_type: 'video/mp4', duration_ms: 32000, caption: 'At the lake' })
     renderAt('/a/summer-2026?photo=v1', '/a/:slug', <Gallery photos={[clip]} />)
     const video = document.querySelector('video')
     expect(video).not.toBeNull()
     expect(video!.controls).toBe(true)
     expect(video!.getAttribute('poster')).toBe(clip.urls.large)
     expect(video!.querySelector('source')?.getAttribute('src')).toBe(clip.urls.original)
+    // No caption overlay over the native controls.
+    expect(screen.queryByText('At the lake')).toBeNull()
   })
 })

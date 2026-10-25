@@ -103,4 +103,28 @@ func TestUploadQuickTimeAndBadVideo(t *testing.T) {
 	if rec.Code != 422 {
 		t.Fatalf("bad video: %d %s", rec.Code, rec.Body.String())
 	}
+
+	// Headers intact, frames cut off: ffprobe passes it, decoding does not.
+	full := filepath.Join(t.TempDir(), "fast.mp4")
+	if out, err := exec.Command("ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:duration=2",
+		"-pix_fmt", "yuv420p", "-movflags", "+faststart", full).CombinedOutput(); err != nil {
+		t.Fatalf("ffmpeg: %v: %s", err, out)
+	}
+	b, _ := os.ReadFile(full)
+	cut := b[:bytes.Index(b, []byte("mdat"))+64]
+	rec = e.upload(http.MethodPost, "/api/publish/albums/"+a.ID+"/photos", map[string]string{"lr_photo_uuid": "lr-cut"}, cut, "cut.mp4")
+	if rec.Code != 422 {
+		t.Fatalf("truncated video: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestUploadVideoWithoutFFprobe(t *testing.T) {
+	e := newEnv(t)
+	a := e.createAlbum("Clips")
+	mp4 := testVideo(t, ".mp4")
+	t.Setenv("PATH", "")
+	rec := e.upload(http.MethodPost, "/api/publish/albums/"+a.ID+"/photos", map[string]string{"lr_photo_uuid": "lr-v"}, mp4, "a.mp4")
+	if rec.Code != 500 {
+		t.Fatalf("no ffprobe: %d %s, want 500", rec.Code, rec.Body.String())
+	}
 }
