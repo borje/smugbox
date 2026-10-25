@@ -1,5 +1,6 @@
 import { ColumnsPhotoAlbum, MasonryPhotoAlbum, RowsPhotoAlbum } from 'react-photo-album'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
+import type { MockInstance } from 'vitest'
 import Gallery from '@/components/Gallery'
 import { renderAt, setSite } from '@/test/render'
 import { photo, summerDetail } from '@/test/fixtures'
@@ -87,6 +88,15 @@ describe('Gallery layouts', () => {
 })
 
 describe('Gallery lightbox', () => {
+  // jsdom has no media playback; yarl's autoplay calls play().catch().
+  let play: MockInstance<HTMLMediaElement['play']>
+  let pause: MockInstance<HTMLMediaElement['pause']>
+  beforeEach(() => {
+    play = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue()
+    pause = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {})
+  })
+  afterEach(() => vi.restoreAllMocks())
+
   it('plays a video slide from its original', () => {
     const clip = photo('summer-2026', 'v1', { filename: 'CLIP.mp4', mime_type: 'video/mp4', duration_ms: 32000, caption: 'At the lake' })
     renderAt('/a/summer-2026?photo=v1', '/a/:slug', <Gallery photos={[clip]} />)
@@ -97,5 +107,23 @@ describe('Gallery lightbox', () => {
     expect(video!.querySelector('source')?.getAttribute('src')).toBe(clip.urls.original)
     // No caption overlay over the native controls.
     expect(screen.queryByText('At the lake')).toBeNull()
+  })
+
+  it('autoplays the video, and Space toggles it unless a button has focus', () => {
+    const clip = photo('summer-2026', 'v1', { mime_type: 'video/mp4' })
+    renderAt('/a/summer-2026?photo=v1', '/a/:slug', <Gallery photos={[clip]} />)
+    expect(play).toHaveBeenCalled()
+    play.mockClear()
+    const controller = document.querySelector('.yarl__container') as HTMLElement
+    expect(fireEvent.keyDown(controller, { key: ' ' })).toBe(false) // default prevented
+    expect(play).toHaveBeenCalledTimes(1)
+    fireEvent.keyDown(screen.getByRole('button', { name: /close/i }), { key: ' ' })
+    expect(play).toHaveBeenCalledTimes(1)
+    expect(pause).not.toHaveBeenCalled()
+  })
+
+  it('leaves Space alone on a photo slide', () => {
+    renderAt('/a/summer-2026?photo=p1', '/a/:slug', <Gallery photos={[photo('summer-2026', 'p1')]} />)
+    expect(fireEvent.keyDown(document.querySelector('.yarl__container') as HTMLElement, { key: ' ' })).toBe(true)
   })
 })

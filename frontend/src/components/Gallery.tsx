@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ImgHTMLAttribut
 import { useSearchParams } from 'react-router'
 import { ColumnsPhotoAlbum, MasonryPhotoAlbum, RowsPhotoAlbum } from 'react-photo-album'
 import Lightbox, {
+  EVENT_ON_KEY_DOWN,
   IconButton,
   createIcon,
+  useController,
   useLightboxState,
   type ControllerRef,
-  type SlideshowRef,
 } from 'yet-another-react-lightbox'
 import Captions from 'yet-another-react-lightbox/plugins/captions'
 import Counter from 'yet-another-react-lightbox/plugins/counter'
@@ -95,6 +96,30 @@ function VideoBadge({ ms }: { ms: number }) {
   )
 }
 
+/**
+ * Space plays or pauses the current slide's video without moving focus to it.
+ * It listens where yarl's arrow keys do; a focused button, link or the video
+ * itself keeps its own Space behaviour.
+ */
+function SpaceTogglesVideo() {
+  const { subscribeSensors, containerRef } = useController()
+  useEffect(
+    () =>
+      subscribeSensors(EVENT_ON_KEY_DOWN, (e) => {
+        if (e.key !== ' ' || e.repeat) return
+        if ((e.target as HTMLElement).closest('button, a, input, textarea, select, video')) return
+        // ponytail: yarl's current-slide class, not a documented API; recheck on yarl upgrades.
+        const v = containerRef.current?.querySelector<HTMLVideoElement>('.yarl__slide_current video')
+        if (!v) return
+        e.preventDefault()
+        if (v.paused) v.play().catch(() => {})
+        else v.pause()
+      }),
+    [subscribeSensors, containerRef],
+  )
+  return null
+}
+
 export default function Gallery({ photos }: { photos: Photo[] }) {
   const [searchParams, setSearchParams] = useSearchParams()
   // The info panel stays open while arrowing through slides; it only closes
@@ -107,7 +132,6 @@ export default function Gallery({ photos }: { photos: Photo[] }) {
   // is scoped to. Focus on an ancestor doesn't bubble keydown into a
   // descendant's handler, so arrow keys stop working unless we refocus.
   const controllerRef = useRef<ControllerRef>(null)
-  const slideshowRef = useRef<SlideshowRef>(null)
   useEffect(() => {
     const onFullscreenChange = () => {
       if (document.fullscreenElement) controllerRef.current?.focus()
@@ -197,8 +221,6 @@ export default function Gallery({ photos }: { photos: Photo[] }) {
         on={{
           view: ({ index: i }) => {
             if (photos[i] && photos[i].id !== photoParam) setPhoto(photos[i].id, true)
-            // Videos don't autoplay, so the slideshow would skip past them.
-            if (photos[i] && isVideo(photos[i])) slideshowRef.current?.pause()
           },
         }}
         plugins={[Captions, Counter, Fullscreen, Slideshow, Thumbnails, Video, Zoom, Download]}
@@ -209,13 +231,23 @@ export default function Gallery({ photos }: { photos: Photo[] }) {
             'close',
           ],
         }}
-        render={{ controls: () => <InfoPanel photos={photos} open={infoOpen} onToggle={toggleInfo} /> }}
+        render={{
+          controls: () => (
+            <>
+              <SpaceTogglesVideo />
+              <InfoPanel photos={photos} open={infoOpen} onToggle={toggleInfo} />
+            </>
+          ),
+        }}
         // Gallery.css turns this flag into container padding so the slide
         // shrinks beside (or above) the panel instead of being covered.
         styles={{ container: { '--yarl__sb_info': infoOpen ? 1 : 0 } }}
         captions={{ descriptionTextAlign: 'center', descriptionMaxLines: 4 }}
-        slideshow={{ ref: slideshowRef, delay: 4000 }}
-        video={{ controls: true, playsInline: true, preload: 'metadata' }}
+        slideshow={{ delay: 4000 }}
+        // Autoplay after the visitor opened or navigated to the video; a cold
+        // deep link is usually blocked by the browser and shows the poster.
+        // The slideshow waits for a playing video to end.
+        video={{ controls: true, playsInline: true, preload: 'metadata', autoPlay: true }}
         thumbnails={{ width: 96, height: 64, border: 0, gap: 8, padding: 0, imageFit: 'cover' }}
         zoom={{ maxZoomPixelRatio: 2 }}
         controller={{ ref: controllerRef, closeOnBackdropClick: true }}
