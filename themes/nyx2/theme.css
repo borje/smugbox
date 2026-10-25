@@ -103,15 +103,24 @@
 /* Full width: the mosaic and the album header run edge to edge. */
 [data-slot="page"] {
   max-width: none;
-  padding: 1.5rem 0;
+  padding: 0 0 1.5rem;
 }
 
 /* The top bar: the site name as an italic wordmark, then the path in the
    same serif, upright. */
-[data-slot="breadcrumb"],
 [data-slot="search-tabs"],
 [data-slot="search-scope"] {
   margin-inline: 1rem;
+}
+/* Sticky across the page, edge to edge like the mosaic. */
+[data-slot="breadcrumb"] {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+  background: color-mix(in oklab, var(--background) 75%, transparent);
+  backdrop-filter: blur(12px);
 }
 [data-slot="breadcrumb-list"] {
   align-items: baseline;
