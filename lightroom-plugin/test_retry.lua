@@ -5,7 +5,7 @@ package.path = "smugbox.lrplugin/?.lua;" .. package.path
 local slept = {}
 local sdk = {
 	LrHttp = {},
-	LrPathUtils = { leafName = function(p) return p end },
+	LrPathUtils = { leafName = function(p) return p end, extension = function() return "jpg" end },
 	LrTasks = {
 		pcall = pcall,
 		sleep = function(n) table.insert(slept, n) end,
