@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils'
 // Images revealed within STAGGER_WINDOW of each other start STAGGER_STEP apart,
 // so a screenful of photos ripples in instead of fading in all at once.
 const STAGGER_WINDOW = 250
-const STAGGER_STEP = 80
-const STAGGER_MAX = 900
+const STAGGER_STEP = 60
+const STAGGER_MAX = 360
 let lastReveal = 0
 let batchSize = 0
 

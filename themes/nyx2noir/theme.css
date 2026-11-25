@@ -174,5 +174,5 @@
 
 /* Album photos grow from smaller while fading in; covers fade in like Noir's. */
 [data-slot="gallery"] {
-  --reveal-animation: zoom-fade-in 1s ease backwards;
+  --reveal-animation: zoom-fade-in 450ms cubic-bezier(0.2, 0, 0, 1) backwards;
 }

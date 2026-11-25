@@ -130,13 +130,13 @@ in every theme.
 | `--cover-aspect` | `4 / 3` | Album/folder covers |
 | `--card-grid-min` | `18rem` | Smallest card width in the auto-fill grid |
 | `--card-gap` | `2rem 1.5rem` | Grid gap (row, column) |
-| `--reveal-animation` | `fade-in 1s ease-out backwards` | How a cover or photo appears once loaded and in view; core defines `fade-in` and `zoom-fade-in`; `none` makes it just appear |
+| `--reveal-animation` | `fade-in 450ms ease-out backwards` | How a cover or photo appears once loaded and in view; core defines `fade-in` and `zoom-fade-in`; `none` makes it just appear |
 
 Tokens inherit, so a theme can scope one to a slot, e.g. photos that zoom in
 while covers just appear:
 
 ```css
-:root { --reveal-animation: zoom-fade-in 1s ease backwards; }
+:root { --reveal-animation: zoom-fade-in 450ms cubic-bezier(0.2, 0, 0, 1) backwards; }
 [data-slot="album-card-media"], [data-slot="folder-card-media"] { --reveal-animation: none; }
 ```
 

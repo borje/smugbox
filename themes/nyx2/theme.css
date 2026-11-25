@@ -89,7 +89,7 @@
 
   --cover-aspect: 1 / 1;
   /* Photos grow from smaller while fading in; covers just appear (below). */
-  --reveal-animation: zoom-fade-in 1s ease backwards;
+  --reveal-animation: zoom-fade-in 450ms cubic-bezier(0.2, 0, 0, 1) backwards;
 
   --yarl__color_button: oklch(0.2 0 0 / 0.8);
   --yarl__color_button_active: oklch(0.1 0 0);

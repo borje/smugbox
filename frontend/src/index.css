@@ -105,7 +105,7 @@
 
     /* How images appear once loaded and scrolled into view (FadeImage):
        fade-in, zoom-fade-in or none. */
-    --reveal-animation: fade-in 1s ease-out backwards;
+    --reveal-animation: fade-in 450ms ease-out backwards;
 
     /* yet-another-react-lightbox reads its own variables. Its controls
        default to white, so follow the palette like the backdrop does. */
@@ -161,9 +161,22 @@
 @keyframes zoom-fade-in {
   from {
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale(0.94);
   }
 }
 @utility animate-reveal {
   animation: var(--reveal-animation);
+  /* Reduced motion: whatever a theme picked becomes a short fade with no
+     zoom (zoom-fade-in is redefined below). A theme's `none` stays none. */
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 150ms;
+    animation-timing-function: linear;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes zoom-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
 }
